@@ -1,11 +1,14 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, Tray, Menu } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 
+let tray: Tray | null = null
+let mainWindow: BrowserWindow | null = null
+
 function createWindow(): void {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 900,
     height: 670,
     show: false,
@@ -18,7 +21,12 @@ function createWindow(): void {
   })
 
   mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
+    mainWindow?.show()
+  })
+
+  mainWindow.on('close', (event) => {
+    event.preventDefault()
+    mainWindow?.hide()
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -33,6 +41,32 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+}
+
+function createTray(): void {
+  const trayIcon = process.platform === 'darwin' ? icon : join(__dirname, '../../resources/icon.png') // Icono del tray
+
+  tray = new Tray(trayIcon)
+  tray.setToolTip('Mi Aplicación') 
+  const trayMenu = Menu.buildFromTemplate([
+    {
+      label: 'Abrir Aplicación',
+      click: (): void => {
+        mainWindow?.show()
+      }
+    },
+    {
+      label: 'Salir',
+      click: (): void => {
+        app.quit()
+      }
+    }
+  ])
+  tray.setContextMenu(trayMenu)
+
+  tray.on('click', () => {
+    mainWindow?.show()
+  })
 }
 
 // This method will be called when Electron has finished
@@ -53,6 +87,7 @@ app.whenReady().then(() => {
   ipcMain.on('ping', () => console.log('pong'))
 
   createWindow()
+  createTray()
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
@@ -68,6 +103,11 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
+})
+
+
+app.on('before-quit', () => {
+  tray?.destroy()
 })
 
 // In this file you can include the rest of your app"s specific main process
