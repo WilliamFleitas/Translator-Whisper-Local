@@ -1,13 +1,19 @@
-import { app, shell, BrowserWindow, ipcMain, Tray, Menu } from 'electron'
-import { join } from 'path'
+import { app, BrowserWindow, ipcMain, Tray, Menu } from 'electron'
+import path, { join } from 'path'
+import dotenv from 'dotenv'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { spawn } from 'child_process'
+
+dotenv.config()
 
 let tray: Tray | null = null
 let mainWindow: BrowserWindow | null = null
+let overlayWindow: BrowserWindow | null = null
+
+console.log('Ruta al archivo de credenciales:', process.env.GOOGLE_APPLICATION_CREDENTIALS)
 
 function createWindow(): void {
-  // Create the browser window.
   mainWindow = new BrowserWindow({
     width: 900,
     height: 670,
@@ -29,13 +35,6 @@ function createWindow(): void {
     mainWindow?.hide()
   })
 
-  mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
-    return { action: 'deny' }
-  })
-
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
@@ -44,10 +43,10 @@ function createWindow(): void {
 }
 
 function createTray(): void {
-  const trayIcon = process.platform === 'darwin' ? icon : join(__dirname, '../../resources/icon.png') // Icono del tray
-
+  const trayIcon =
+    process.platform === 'darwin' ? icon : join(__dirname, '../../resources/icon.png')
   tray = new Tray(trayIcon)
-  tray.setToolTip('Mi Aplicación') 
+  tray.setToolTip('Mi Aplicación')
   const trayMenu = Menu.buildFromTemplate([
     {
       label: 'Abrir Aplicación',
@@ -69,46 +68,111 @@ function createTray(): void {
   })
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
+function createOverlay(): void {
+  if (!overlayWindow) {
+    overlayWindow = new BrowserWindow({
+      width: 400,
+      height: 150,
+      x: 100,
+      y: 100,
+      transparent: true,
+      frame: false,
+      alwaysOnTop: true,
+      skipTaskbar: true,
+      show: false,
+      webPreferences: {
+        nodeIntegration: true,
+        preload: join(__dirname, '../preload/index.js')
+      }
+    })
+
+    overlayWindow.loadURL(
+      'data:text/html;charset=utf-8,' +
+        encodeURIComponent(`
+          <html>
+            <body style="margin: 0; padding: 0; background: transparent; 
+                        color: white; font-size: 36px; font-weight: bold; 
+                        text-align: center; border: 5px solid yellow; 
+                        border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);">
+              Texto del Overlay
+            </body>
+          </html>
+        `)
+    )
+  }
+}
+
+ipcMain.on('toggle-overlay', (_event, shouldShow: boolean) => {
+  if (shouldShow) {
+    if (!overlayWindow) {
+      createOverlay()
+    }
+    overlayWindow?.show()
+  } else {
+    if (overlayWindow) {
+      overlayWindow.close()
+      overlayWindow = null
+    }
+  }
+})
+
+// Canal para iniciar el script de Python
+ipcMain.handle('start-streaming', async (event) => {
+  return new Promise((resolve, reject) => {
+    // Ruta absoluta al script de Python
+    const scriptPath = path.resolve(__dirname, '../../src/main/speechToTextPy.py')
+    const venvPython = path.resolve(__dirname, '../../venv/Scripts/python')
+    console.log('Ejecutando el script de Python...')
+
+    // Ejecutar el script de Python
+    const pythonProcess = spawn(venvPython, ['-u', scriptPath, "mic"])
+    // Capturar stdout de Python y enviar los datos en tiempo real al frontend
+    pythonProcess.stdout.on('data', (data) => {
+      const output = data.toString().trim()
+      console.log(`stdout2323: ${output}`)
+    })
+
+    pythonProcess.stderr.on('data', (data) => {
+      console.error(`stderr3434: ${data.toString().trim()}`)
+    })
+
+    pythonProcess.on('error', (error) => {
+      console.error(`Error al ejecutar el script de Python: ${error.message}`)
+      reject(`Error al ejecutar el script de Python: ${error.message}`)
+    })
+
+    pythonProcess.on('close', (code) => {
+      console.log(`El script de Python terminó con el código: ${code}`)
+      if (code === 0) {
+        resolve('El script de Python se ejecutó correctamente.')
+      } else {
+        reject('Error al ejecutar el script de Python.')
+      }
+    })
+  })
+})
+
 app.whenReady().then(() => {
-  // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
-
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
 
   createWindow()
   createTray()
 
   app.on('activate', function () {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
 })
 
-
 app.on('before-quit', () => {
   tray?.destroy()
 })
-
-// In this file you can include the rest of your app"s specific main process
-// code. You can also put them in separate files and require them here.

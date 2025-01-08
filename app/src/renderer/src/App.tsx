@@ -1,8 +1,20 @@
 import Versions from './components/Versions'
 import electronLogo from './assets/electron.svg'
+import { useState } from 'react'
 
 function App(): JSX.Element {
   const ipcHandle = (): void => window.electron.ipcRenderer.send('ping')
+
+  const [overlayIsShowing, SetOverlayIsShowing] = useState<boolean>(false)
+
+  const showOverlay = (): void => {
+    window.electron.ipcRenderer.send('toggle-overlay', !overlayIsShowing)
+    SetOverlayIsShowing(!overlayIsShowing)
+  }
+
+  const handleStartRecording = (): void => {
+    window.api.startStreaming()
+  }
 
   return (
     <>
@@ -26,6 +38,8 @@ function App(): JSX.Element {
             Send IPC
           </a>
         </div>
+        <button type="button" onClick={showOverlay}>Mostrar Overlay</button>
+        <button type="button" onClick={handleStartRecording}>Record</button>
       </div>
       <Versions></Versions>
     </>
