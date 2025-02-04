@@ -11,11 +11,10 @@ let tray: Tray | null = null
 let mainWindow: BrowserWindow | null = null
 let overlayWindow: BrowserWindow | null = null
 
-console.log('Ruta al archivo de credenciales:', process.env.GOOGLE_APPLICATION_CREDENTIALS)
-
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 900,
+    minWidth: 350,
     height: 670,
     show: false,
     autoHideMenuBar: true,
@@ -46,16 +45,16 @@ function createTray(): void {
   const trayIcon =
     process.platform === 'darwin' ? icon : join(__dirname, '../../resources/icon.png')
   tray = new Tray(trayIcon)
-  tray.setToolTip('Mi Aplicación')
+  tray.setToolTip('FreeLang')
   const trayMenu = Menu.buildFromTemplate([
     {
-      label: 'Abrir Aplicación',
+      label: 'Open App',
       click: (): void => {
         mainWindow?.show()
       }
     },
     {
-      label: 'Salir',
+      label: 'Quit',
       click: (): void => {
         app.quit()
       }
@@ -116,38 +115,264 @@ ipcMain.on('toggle-overlay', (_event, shouldShow: boolean) => {
   }
 })
 
-// Canal para iniciar el script de Python
-ipcMain.handle('start-streaming', async (event) => {
-  return new Promise((resolve, reject) => {
-    // Ruta absoluta al script de Python
-    const scriptPath = path.resolve(__dirname, '../../src/main/speechToTextPy.py')
-    const venvPython = path.resolve(__dirname, '../../venv/Scripts/python')
-    console.log('Ejecutando el script de Python...')
+ipcMain.handle(
+  'voicemeeter-api-calls',
+  async (event, queryType: 'isRunning' | 'open' | 'close') => {
+    return new Promise((resolve) => {
+      const vcStatusPath = 'getVoicemeeterStatus.py'
+      const vcRunOrClosePath = 'openOrCloseVoicemeeter.py'
+      const scriptPath = path.resolve(
+        __dirname,
+        `../../src/main/backend/utils/voicemeeterApi/${queryType === 'open' || queryType === 'close' ? vcRunOrClosePath : vcStatusPath}`
+      )
+      const venvPython = path.resolve(__dirname, '../../venv/Scripts/python')
 
-    // Ejecutar el script de Python
-    const pythonProcess = spawn(venvPython, ['-u', scriptPath, "mic"])
-    // Capturar stdout de Python y enviar los datos en tiempo real al frontend
+      const pythonProcess = spawn(venvPython, ['-u', scriptPath, queryType])
+
+      let outputData = ''
+
+      pythonProcess.stdout.on('data', (data) => {
+        outputData += data.toString()
+      })
+
+      pythonProcess.stderr.on('data', (data) => {
+        console.error(`Python script error: ${data.toString().trim()}`)
+      })
+
+      pythonProcess.on('close', (code) => {
+        if (code === 0) {
+          try {
+            const response = JSON.parse(outputData.trim())
+            resolve(response)
+          } catch (error) {
+            console.error(`Error parsing JSON output: ${error.message}`)
+            resolve({
+              success: false,
+              error: `Error parsing JSON output: ${error.message}`
+            })
+          }
+        } else {
+          resolve({
+            success: false,
+            error: `Error executing Python script. Code: ${code}`
+          })
+        }
+      })
+    })
+  }
+)
+ipcMain.handle('get_VC_settings_status', async (event) => {
+  return new Promise((resolve) => {
+    const scriptPath = path.resolve(
+      __dirname,
+      `../../src/main/backend/utils/voicemeeterApi/getVCSettingsStatus.py`
+    )
+    const venvPython = path.resolve(__dirname, '../../venv/Scripts/python')
+
+    const pythonProcess = spawn(venvPython, ['-u', scriptPath])
+
+    let outputData = ''
+
     pythonProcess.stdout.on('data', (data) => {
-      const output = data.toString().trim()
-      console.log(`stdout2323: ${output}`)
+      outputData += data.toString()
     })
 
     pythonProcess.stderr.on('data', (data) => {
-      console.error(`stderr3434: ${data.toString().trim()}`)
-    })
-
-    pythonProcess.on('error', (error) => {
-      console.error(`Error al ejecutar el script de Python: ${error.message}`)
-      reject(`Error al ejecutar el script de Python: ${error.message}`)
+      console.error(`Python script error: ${data.toString().trim()}`)
     })
 
     pythonProcess.on('close', (code) => {
-      console.log(`El script de Python terminó con el código: ${code}`)
       if (code === 0) {
-        resolve('El script de Python se ejecutó correctamente.')
+        try {
+          const response = JSON.parse(outputData.trim())
+          resolve(response)
+        } catch (error) {
+          console.error(`Error parsing JSON output: ${error.message}`)
+          resolve({
+            success: false,
+            error: `Error parsing JSON output: ${error.message}`
+          })
+        }
       } else {
-        reject('Error al ejecutar el script de Python.')
+        resolve({
+          success: false,
+          error: `Error executing Python script. Code: ${code}`
+        })
       }
+    })
+  })
+})
+
+ipcMain.handle('set_VC_setup', async (event, device_name: string) => {
+  return new Promise((resolve) => {
+    const scriptPath = path.resolve(
+      __dirname,
+      `../../src/main/backend/utils/voicemeeterApi/setVCSetup.py`
+    )
+    const venvPython = path.resolve(__dirname, '../../venv/Scripts/python')
+
+    const pythonProcess = spawn(venvPython, ['-u', scriptPath, device_name])
+
+    let outputData = ''
+
+    pythonProcess.stdout.on('data', (data) => {
+      outputData += data.toString()
+    })
+
+    pythonProcess.stderr.on('data', (data) => {
+      console.error(`Python script error: ${data.toString().trim()}`)
+    })
+
+    pythonProcess.on('close', (code) => {
+      if (code === 0) {
+        try {
+          const response = JSON.parse(outputData.trim())
+          resolve(response)
+        } catch (error) {
+          console.error(`Error parsing JSON output: ${error.message}`)
+          resolve({
+            success: false,
+            error: `Error parsing JSON output: ${error.message}`
+          })
+        }
+      } else {
+        resolve({
+          success: false,
+          error: `Error executing Python script. Code: ${code}`
+        })
+      }
+    })
+  })
+})
+
+ipcMain.handle('find_default_audio_device', async (event) => {
+  return new Promise((resolve) => {
+    const scriptPath = path.resolve(
+      __dirname,
+      '../../src/main/backend/utils/getUserDefaultAudioDevice.py'
+    )
+    const venvPython = path.resolve(__dirname, '../../venv/Scripts/python')
+
+    const pythonProcess = spawn(venvPython, ['-u', scriptPath])
+
+    let outputData = ''
+
+    pythonProcess.stdout.on('data', (data) => {
+      outputData += data.toString()
+    })
+
+    pythonProcess.stderr.on('data', (data) => {
+      console.error(`Error parsing JSON output: ${data.toString().trim()}`)
+    })
+
+    pythonProcess.on('close', (code) => {
+      if (code === 0) {
+        try {
+          const response = JSON.parse(outputData.trim())
+          resolve(response)
+        } catch (error) {
+          console.error(`Error parsing JSON output: ${error.message}`)
+          resolve({
+            success: false,
+            error: `Error parsing JSON output: ${error.message}`
+          })
+        }
+      } else {
+        resolve({
+          success: false,
+          error: `Error executing Python script. Code: ${code}`
+        })
+      }
+    })
+  })
+})
+
+ipcMain.handle('find-audio-devices', async (event) => {
+  return new Promise((resolve) => {
+    const scriptPath = path.resolve(
+      __dirname,
+      '../../src/main/backend/utils/getUserAudioDevices.py'
+    )
+    const venvPython = path.resolve(__dirname, '../../venv/Scripts/python')
+
+    const pythonProcess = spawn(venvPython, ['-u', scriptPath])
+
+    let outputData = ''
+
+    pythonProcess.stdout.on('data', (data) => {
+      outputData += data.toString()
+    })
+
+    pythonProcess.stderr.on('data', (data) => {
+      console.error(`Error parsing JSON output: ${data.toString().trim()}`)
+    })
+
+    pythonProcess.on('close', (code) => {
+      if (code === 0) {
+        try {
+          const response = JSON.parse(outputData.trim())
+          resolve(response)
+        } catch (error) {
+          console.error(`Error parsing JSON output: ${error.message}`)
+          resolve({
+            success: false,
+            error: `Error parsing JSON output: ${error.message}`
+          })
+        }
+      } else {
+        resolve({
+          success: false,
+          error: `Error executing Python script. Code: ${code}`
+        })
+      }
+    })
+  })
+})
+
+ipcMain.handle('start-streaming', async (event, device) => {
+  return new Promise((resolve, reject) => {
+    const scriptPath = path.resolve(__dirname, '../../src/main/backend/utils/speechToTextPy.py')
+    const venvPython = path.resolve(__dirname, '../../venv/Scripts/python')
+
+    const pythonProcess = spawn(venvPython, ['-u', scriptPath, device])
+
+    let outputData = ''
+
+    pythonProcess.stdout.on('data', (data) => {
+      const receivedData = data.toString().trim()
+      outputData += receivedData
+
+      try {
+        const response = JSON.parse(receivedData)
+        if (response.success) {
+          event.sender.send('streaming-data', response.data)
+        } else {
+          throw Error(response.error)
+        }
+      } catch (error) {
+        console.log(error)
+        event.sender.send('streaming-error', error)
+      }
+    })
+
+    pythonProcess.stderr.on('data', (data) => {
+      const errorMessage = data.toString().trim()
+      console.log(`Python script error: ${errorMessage}`)
+    })
+
+    pythonProcess.on('close', (code, signal) => {
+      if (code === 0) {
+        resolve({ success: true, message: 'Transcription completed.' })
+      } else {
+        const errorMsg = `Python script exited with code ${code}. Signal: ${signal}. Check logs for details.`
+        console.log(errorMsg)
+      }
+    })
+
+    pythonProcess.on('error', (err) => {
+      console.error('Error spawning Python process:', err)
+      event.sender.send('streaming-error', `Error spawning process: ${err.message}`)
+      reject({ success: false, error: `Error spawning Python process: ${err.message}` })
     })
   })
 })

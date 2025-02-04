@@ -1,0 +1,15 @@
+.custom-dropdown {
+    background-color: #6b6b6b;
+    color: #fff;
+    border-radius: 8px;
+    border: 1px solid #464646;
+    padding: 0px 0px;
+    margin: 0px;
+    max-height: 10rem;
+    overflow-y: auto;
+  }
+  .szh-menu__arrow {
+    background-color: #1b1d22;
+    border: 0px solid #1b1d22;
+  }
+  
