@@ -1,35 +1,29 @@
-import Versions from './components/Versions'
-import electronLogo from './assets/electron.svg'
+import { Routes, Route, BrowserRouter } from 'react-router-dom'
+import TestPage from './pages/TestPage'
+import TranslatorPage from './pages/translator/TranslatorPage'
 
-function App(): JSX.Element {
-  const ipcHandle = (): void => window.electron.ipcRenderer.send('ping')
+const PUBLIC_URL = ''
 
+function AppRoutes(): JSX.Element {
   return (
-    <>
-      <img alt="logo" className="logo" src={electronLogo} />
-      <div className="creator">Powered by electron-vite</div>
-      <div className="text">
-        Build an Electron app with <span className="react">React</span>
-        &nbsp;and <span className="ts">TypeScript</span>
-      </div>
-      <p className="tip">
-        Please try pressing <code>F12</code> to open the devTool
-      </p>
-      <div className="actions">
-        <div className="action">
-          <a href="https://electron-vite.org/" target="_blank" rel="noreferrer">
-            Documentation
-          </a>
-        </div>
-        <div className="action">
-          <a target="_blank" rel="noreferrer" onClick={ipcHandle}>
-            Send IPC
-          </a>
-        </div>
-      </div>
-      <Versions></Versions>
-    </>
+    <BrowserRouter basename={PUBLIC_URL}>
+      <Routes>
+        <Route path="/*" element={<TranslatorPage />} />
+        <Route path="translator" element={<TranslatorPage />} />
+        <Route path="test" element={<TestPage />} />
+        {/* 
+          <Route path='/settings/*' element={<UserSettingsPage />} /> */}
+        <Route
+          path="*"
+          element={
+            <div>
+              <h1>Are you lost? We all are</h1>
+            </div>
+          }
+        />
+      </Routes>
+    </BrowserRouter>
   )
 }
 
-export default App
+export default AppRoutes

@@ -1,4 +1,9 @@
 {
   "files": [],
-  "references": [{ "path": "./tsconfig.node.json" }, { "path": "./tsconfig.web.json" }]
+  "references": [{ "path": "./tsconfig.node.json" }, { "path": "./tsconfig.web.json" }],
+  "exclude": ["node_modules"],
+  "include": ["src/**/*.ts", "src/**/*.d.ts"],
+  "compilerOptions": {
+    "typeRoots": ["./node_modules/@types", "./src/globalTypes"],
+  }
 }

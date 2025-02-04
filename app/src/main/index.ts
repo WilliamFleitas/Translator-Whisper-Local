@@ -1,15 +1,20 @@
-import { app, shell, BrowserWindow, ipcMain, Tray, Menu } from 'electron'
-import { join } from 'path'
+import { app, BrowserWindow, ipcMain, Tray, Menu } from 'electron'
+import path, { join } from 'path'
+import dotenv from 'dotenv'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import { spawn } from 'child_process'
+
+dotenv.config()
 
 let tray: Tray | null = null
 let mainWindow: BrowserWindow | null = null
+let overlayWindow: BrowserWindow | null = null
 
 function createWindow(): void {
-  // Create the browser window.
   mainWindow = new BrowserWindow({
     width: 900,
+    minWidth: 350,
     height: 670,
     show: false,
     autoHideMenuBar: true,
@@ -29,13 +34,6 @@ function createWindow(): void {
     mainWindow?.hide()
   })
 
-  mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
-    return { action: 'deny' }
-  })
-
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
@@ -44,19 +42,19 @@ function createWindow(): void {
 }
 
 function createTray(): void {
-  const trayIcon = process.platform === 'darwin' ? icon : join(__dirname, '../../resources/icon.png') // Icono del tray
-
+  const trayIcon =
+    process.platform === 'darwin' ? icon : join(__dirname, '../../resources/icon.png')
   tray = new Tray(trayIcon)
-  tray.setToolTip('Mi Aplicación') 
+  tray.setToolTip('FreeLang')
   const trayMenu = Menu.buildFromTemplate([
     {
-      label: 'Abrir Aplicación',
+      label: 'Open App',
       click: (): void => {
         mainWindow?.show()
       }
     },
     {
-      label: 'Salir',
+      label: 'Quit',
       click: (): void => {
         app.quit()
       }
@@ -69,46 +67,337 @@ function createTray(): void {
   })
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
+function createOverlay(): void {
+  if (!overlayWindow) {
+    overlayWindow = new BrowserWindow({
+      width: 400,
+      height: 150,
+      x: 100,
+      y: 100,
+      transparent: true,
+      frame: false,
+      alwaysOnTop: true,
+      skipTaskbar: true,
+      show: false,
+      webPreferences: {
+        nodeIntegration: true,
+        preload: join(__dirname, '../preload/index.js')
+      }
+    })
+
+    overlayWindow.loadURL(
+      'data:text/html;charset=utf-8,' +
+        encodeURIComponent(`
+          <html>
+            <body style="margin: 0; padding: 0; background: transparent; 
+                        color: white; font-size: 36px; font-weight: bold; 
+                        text-align: center; border: 5px solid yellow; 
+                        border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);">
+              Texto del Overlay
+            </body>
+          </html>
+        `)
+    )
+  }
+}
+
+ipcMain.on('toggle-overlay', (_event, shouldShow: boolean) => {
+  if (shouldShow) {
+    if (!overlayWindow) {
+      createOverlay()
+    }
+    overlayWindow?.show()
+  } else {
+    if (overlayWindow) {
+      overlayWindow.close()
+      overlayWindow = null
+    }
+  }
+})
+
+ipcMain.handle(
+  'voicemeeter-api-calls',
+  async (event, queryType: 'isRunning' | 'open' | 'close') => {
+    return new Promise((resolve) => {
+      const vcStatusPath = 'getVoicemeeterStatus.py'
+      const vcRunOrClosePath = 'openOrCloseVoicemeeter.py'
+      const scriptPath = path.resolve(
+        __dirname,
+        `../../src/main/backend/utils/voicemeeterApi/${queryType === 'open' || queryType === 'close' ? vcRunOrClosePath : vcStatusPath}`
+      )
+      const venvPython = path.resolve(__dirname, '../../venv/Scripts/python')
+
+      const pythonProcess = spawn(venvPython, ['-u', scriptPath, queryType])
+
+      let outputData = ''
+
+      pythonProcess.stdout.on('data', (data) => {
+        outputData += data.toString()
+      })
+
+      pythonProcess.stderr.on('data', (data) => {
+        console.error(`Python script error: ${data.toString().trim()}`)
+      })
+
+      pythonProcess.on('close', (code) => {
+        if (code === 0) {
+          try {
+            const response = JSON.parse(outputData.trim())
+            resolve(response)
+          } catch (error) {
+            console.error(`Error parsing JSON output: ${error.message}`)
+            resolve({
+              success: false,
+              error: `Error parsing JSON output: ${error.message}`
+            })
+          }
+        } else {
+          resolve({
+            success: false,
+            error: `Error executing Python script. Code: ${code}`
+          })
+        }
+      })
+    })
+  }
+)
+ipcMain.handle('get_VC_settings_status', async (event) => {
+  return new Promise((resolve) => {
+    const scriptPath = path.resolve(
+      __dirname,
+      `../../src/main/backend/utils/voicemeeterApi/getVCSettingsStatus.py`
+    )
+    const venvPython = path.resolve(__dirname, '../../venv/Scripts/python')
+
+    const pythonProcess = spawn(venvPython, ['-u', scriptPath])
+
+    let outputData = ''
+
+    pythonProcess.stdout.on('data', (data) => {
+      outputData += data.toString()
+    })
+
+    pythonProcess.stderr.on('data', (data) => {
+      console.error(`Python script error: ${data.toString().trim()}`)
+    })
+
+    pythonProcess.on('close', (code) => {
+      if (code === 0) {
+        try {
+          const response = JSON.parse(outputData.trim())
+          resolve(response)
+        } catch (error) {
+          console.error(`Error parsing JSON output: ${error.message}`)
+          resolve({
+            success: false,
+            error: `Error parsing JSON output: ${error.message}`
+          })
+        }
+      } else {
+        resolve({
+          success: false,
+          error: `Error executing Python script. Code: ${code}`
+        })
+      }
+    })
+  })
+})
+
+ipcMain.handle('set_VC_setup', async (event, device_name: string) => {
+  return new Promise((resolve) => {
+    const scriptPath = path.resolve(
+      __dirname,
+      `../../src/main/backend/utils/voicemeeterApi/setVCSetup.py`
+    )
+    const venvPython = path.resolve(__dirname, '../../venv/Scripts/python')
+
+    const pythonProcess = spawn(venvPython, ['-u', scriptPath, device_name])
+
+    let outputData = ''
+
+    pythonProcess.stdout.on('data', (data) => {
+      outputData += data.toString()
+    })
+
+    pythonProcess.stderr.on('data', (data) => {
+      console.error(`Python script error: ${data.toString().trim()}`)
+    })
+
+    pythonProcess.on('close', (code) => {
+      if (code === 0) {
+        try {
+          const response = JSON.parse(outputData.trim())
+          resolve(response)
+        } catch (error) {
+          console.error(`Error parsing JSON output: ${error.message}`)
+          resolve({
+            success: false,
+            error: `Error parsing JSON output: ${error.message}`
+          })
+        }
+      } else {
+        resolve({
+          success: false,
+          error: `Error executing Python script. Code: ${code}`
+        })
+      }
+    })
+  })
+})
+
+ipcMain.handle('find_default_audio_device', async (event) => {
+  return new Promise((resolve) => {
+    const scriptPath = path.resolve(
+      __dirname,
+      '../../src/main/backend/utils/getUserDefaultAudioDevice.py'
+    )
+    const venvPython = path.resolve(__dirname, '../../venv/Scripts/python')
+
+    const pythonProcess = spawn(venvPython, ['-u', scriptPath])
+
+    let outputData = ''
+
+    pythonProcess.stdout.on('data', (data) => {
+      outputData += data.toString()
+    })
+
+    pythonProcess.stderr.on('data', (data) => {
+      console.error(`Error parsing JSON output: ${data.toString().trim()}`)
+    })
+
+    pythonProcess.on('close', (code) => {
+      if (code === 0) {
+        try {
+          const response = JSON.parse(outputData.trim())
+          resolve(response)
+        } catch (error) {
+          console.error(`Error parsing JSON output: ${error.message}`)
+          resolve({
+            success: false,
+            error: `Error parsing JSON output: ${error.message}`
+          })
+        }
+      } else {
+        resolve({
+          success: false,
+          error: `Error executing Python script. Code: ${code}`
+        })
+      }
+    })
+  })
+})
+
+ipcMain.handle('find-audio-devices', async (event) => {
+  return new Promise((resolve) => {
+    const scriptPath = path.resolve(
+      __dirname,
+      '../../src/main/backend/utils/getUserAudioDevices.py'
+    )
+    const venvPython = path.resolve(__dirname, '../../venv/Scripts/python')
+
+    const pythonProcess = spawn(venvPython, ['-u', scriptPath])
+
+    let outputData = ''
+
+    pythonProcess.stdout.on('data', (data) => {
+      outputData += data.toString()
+    })
+
+    pythonProcess.stderr.on('data', (data) => {
+      console.error(`Error parsing JSON output: ${data.toString().trim()}`)
+    })
+
+    pythonProcess.on('close', (code) => {
+      if (code === 0) {
+        try {
+          const response = JSON.parse(outputData.trim())
+          resolve(response)
+        } catch (error) {
+          console.error(`Error parsing JSON output: ${error.message}`)
+          resolve({
+            success: false,
+            error: `Error parsing JSON output: ${error.message}`
+          })
+        }
+      } else {
+        resolve({
+          success: false,
+          error: `Error executing Python script. Code: ${code}`
+        })
+      }
+    })
+  })
+})
+
+ipcMain.handle('start-streaming', async (event, device) => {
+  return new Promise((resolve, reject) => {
+    const scriptPath = path.resolve(__dirname, '../../src/main/backend/utils/speechToTextPy.py')
+    const venvPython = path.resolve(__dirname, '../../venv/Scripts/python')
+
+    const pythonProcess = spawn(venvPython, ['-u', scriptPath, device])
+
+    let outputData = ''
+
+    pythonProcess.stdout.on('data', (data) => {
+      const receivedData = data.toString().trim()
+      outputData += receivedData
+
+      try {
+        const response = JSON.parse(receivedData)
+        if (response.success) {
+          event.sender.send('streaming-data', response.data)
+        } else {
+          throw Error(response.error)
+        }
+      } catch (error) {
+        console.log(error)
+        event.sender.send('streaming-error', error)
+      }
+    })
+
+    pythonProcess.stderr.on('data', (data) => {
+      const errorMessage = data.toString().trim()
+      console.log(`Python script error: ${errorMessage}`)
+    })
+
+    pythonProcess.on('close', (code, signal) => {
+      if (code === 0) {
+        resolve({ success: true, message: 'Transcription completed.' })
+      } else {
+        const errorMsg = `Python script exited with code ${code}. Signal: ${signal}. Check logs for details.`
+        console.log(errorMsg)
+      }
+    })
+
+    pythonProcess.on('error', (err) => {
+      console.error('Error spawning Python process:', err)
+      event.sender.send('streaming-error', `Error spawning process: ${err.message}`)
+      reject({ success: false, error: `Error spawning Python process: ${err.message}` })
+    })
+  })
+})
+
 app.whenReady().then(() => {
-  // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
-
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
 
   createWindow()
   createTray()
 
   app.on('activate', function () {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
 })
 
-
 app.on('before-quit', () => {
   tray?.destroy()
 })
-
-// In this file you can include the rest of your app"s specific main process
-// code. You can also put them in separate files and require them here.
