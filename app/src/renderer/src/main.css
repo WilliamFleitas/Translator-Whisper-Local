@@ -1,16 +1,12 @@
-
-@tailwind base;
-@tailwind components;
+@import "tailwindcss";
 @tailwind utilities;
 
 body {
   align-items: flex-start;
   justify-content: flex-start;
   overflow: auto;
-  background-image: url('./assets/wavy-lines.svg');
-  background-size: cover;
   user-select: none;
-  background-color: #222222;
+  background-color: #333333;
   color: #ffffff;
   width: 100%;
 }

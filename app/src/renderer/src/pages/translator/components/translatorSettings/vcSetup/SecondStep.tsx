@@ -6,7 +6,7 @@ import {
   DefaultAudioDeviceType,
   SetVCSetupType
 } from '@renderer/globalTypes/globalApi'
-import SelectMenu, { MenuOptionType } from '../../../../components/menu/SelectMenu'
+import SelectMenu, { MenuOptionType } from '../../../../../components/menu/SelectMenu'
 import { useEffect, useState } from 'react'
 import { FaRegEdit } from 'react-icons/fa'
 

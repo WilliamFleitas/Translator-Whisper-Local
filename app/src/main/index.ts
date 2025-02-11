@@ -3,7 +3,7 @@ import path, { join } from 'path'
 import dotenv from 'dotenv'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { spawn } from 'child_process'
+import { spawn, ChildProcess } from 'child_process'
 
 dotenv.config()
 
@@ -329,52 +329,88 @@ ipcMain.handle('find-audio-devices', async (event) => {
   })
 })
 
-ipcMain.handle('start-streaming', async (event, device) => {
-  return new Promise((resolve, reject) => {
-    const scriptPath = path.resolve(__dirname, '../../src/main/backend/utils/speechToTextPy.py')
-    const venvPython = path.resolve(__dirname, '../../venv/Scripts/python')
+let startStreamingProcess: ChildProcess | null = null
 
-    const pythonProcess = spawn(venvPython, ['-u', scriptPath, device])
+ipcMain.handle(
+  'start-streaming',
+  async (event, device, durationTime: 'unlimited' | 60 | 600 | 1800 | 3600) => {
+    return new Promise((resolve, reject) => {
+      const scriptPath = path.resolve(__dirname, '../../src/main/backend/utils/speechToTextPy.py')
+      const venvPython = path.resolve(__dirname, '../../venv/Scripts/python')
 
-    let outputData = ''
+      if (startStreamingProcess) {
+        return reject({ success: false, message: 'The capture is already running' })
+      }
 
-    pythonProcess.stdout.on('data', (data) => {
-      const receivedData = data.toString().trim()
-      outputData += receivedData
+      startStreamingProcess = spawn(venvPython, ['-u', scriptPath, device, durationTime])
+      console.log('Starting streaming with duration:', durationTime)
+      let outputData = ''
 
-      try {
-        const response = JSON.parse(receivedData)
-        if (response.success) {
-          event.sender.send('streaming-data', response.data)
+      if (startStreamingProcess && startStreamingProcess.stdout && startStreamingProcess.stderr) {
+        startStreamingProcess.stdout.on('data', (data) => {
+          const receivedData = data.toString().trim()
+          outputData += receivedData
+
+          try {
+            const response = JSON.parse(receivedData)
+            if (response.success) {
+              event.sender.send('streaming-data', response.data)
+            } else {
+              throw Error(response.error)
+            }
+          } catch (error) {
+            console.log(error)
+            event.sender.send('streaming-error', error)
+          }
+        })
+
+        startStreamingProcess.stderr.on('data', (data) => {
+          const errorMessage = data.toString().trim()
+          console.log(`Python script error: ${errorMessage}`)
+        })
+      }
+
+      startStreamingProcess.on('close', (code, signal) => {
+        if (code === 0) {
+          resolve({ success: true, message: 'Transcription completed.' })
         } else {
-          throw Error(response.error)
+          const errorMsg = `Python script exited with code ${code}. Signal: ${signal}. Check logs for details.`
+          console.log(errorMsg)
         }
-      } catch (error) {
-        console.log(error)
-        event.sender.send('streaming-error', error)
-      }
-    })
+        startStreamingProcess = null
+      })
 
-    pythonProcess.stderr.on('data', (data) => {
-      const errorMessage = data.toString().trim()
-      console.log(`Python script error: ${errorMessage}`)
+      startStreamingProcess.on('error', (err) => {
+        console.error('Error spawning Python process:', err)
+        event.sender.send('streaming-error', `Error spawning process: ${err.message}`)
+        reject({ success: false, error: `Error spawning Python process: ${err.message}` })
+        startStreamingProcess = null
+      })
     })
+  }
+)
 
-    pythonProcess.on('close', (code, signal) => {
-      if (code === 0) {
-        resolve({ success: true, message: 'Transcription completed.' })
+ipcMain.handle('stop-streaming', async () => {
+  if (startStreamingProcess !== null) {
+    try {
+      if (!startStreamingProcess.killed) {
+        startStreamingProcess.kill()
+        console.log('Python process stopped successfully.')
+        startStreamingProcess = null
+
+        return { success: true, data: { status: 'capture finished' } }
       } else {
-        const errorMsg = `Python script exited with code ${code}. Signal: ${signal}. Check logs for details.`
-        console.log(errorMsg)
+        console.log('The process was already stopped.')
+        return { success: false, data: { status: 'The process was already stopped.' } }
       }
-    })
-
-    pythonProcess.on('error', (err) => {
-      console.error('Error spawning Python process:', err)
-      event.sender.send('streaming-error', `Error spawning process: ${err.message}`)
-      reject({ success: false, error: `Error spawning Python process: ${err.message}` })
-    })
-  })
+    } catch (error) {
+      console.error('Error stopping the Python process:', error)
+      return { success: false, data: { status: 'Error stopping the process' } }
+    }
+  } else {
+    console.log('No process is running.')
+    return { success: false, data: { status: 'No process is running.' } }
+  }
 })
 
 app.whenReady().then(() => {

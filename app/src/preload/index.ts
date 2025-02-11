@@ -48,7 +48,11 @@ export type ApiResponse<T> =
     }
 
 export interface Api {
-  startStreaming: (device: 'speaker' | 'mic') => Promise<ApiResponse<StartStreamingType>>
+  startStreaming: (
+    device: 'speaker' | 'mic',
+    durationTime: 'unlimited' | 60 | 600 | 1800 | 3600
+  ) => Promise<ApiResponse<StartStreamingType>>
+  stopStreaming: () => Promise<ApiResponse<{ status: string }>>
   getAudioDevices: () => Promise<ApiResponse<AudioDeviceDataType[]>>
   getDefaultAudioDevice: () => Promise<ApiResponse<DefaultAudioDeviceType>>
   getVoicemeeterApiCalls: (
@@ -57,7 +61,6 @@ export interface Api {
   getVCSettingsStatus: () => Promise<ApiResponse<VCSettingsStatusType>>
   setVCSetup: (device_name: string) => Promise<ApiResponse<SetVCSetupType>>
 
-  
   on: (event: string, listener: (event: Electron.IpcRendererEvent, data: any) => void) => void
   removeListener: (
     event: string,
@@ -65,10 +68,12 @@ export interface Api {
   ) => void
 }
 
-
 const api: Api = {
-  startStreaming: async (device) => {
-    return await ipcRenderer.invoke('start-streaming', device)
+  startStreaming: async (device, durationTime) => {
+    return await ipcRenderer.invoke('start-streaming', device, durationTime)
+  },
+  stopStreaming: async () => {
+    return await ipcRenderer.invoke('stop-streaming')
   },
   getAudioDevices: async () => {
     return await ipcRenderer.invoke('find-audio-devices')

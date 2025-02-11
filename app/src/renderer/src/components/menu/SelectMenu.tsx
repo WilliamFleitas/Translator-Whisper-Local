@@ -14,7 +14,7 @@ const DOPDOWN_X_PLACE_OPTIONS = {
 
 export type MenuOptionType = {
   label: string
-  value: string
+  value: string | number
   id: number | string
 }
 
@@ -31,6 +31,7 @@ interface SelectMenuPropsType {
   position: 'anchor' | 'auto' | 'initial'
   customButton: JSX.Element
   disableButton?: boolean
+  menuType?: 'radio' | 'checkbox' | null
 }
 const SelectMenu = ({
   optionsData,
@@ -44,7 +45,8 @@ const SelectMenu = ({
   portal = false,
   position,
   customButton,
-  disableButton=false
+  disableButton = false,
+  menuType = 'checkbox'
 }: SelectMenuPropsType): JSX.Element => {
   return (
     <>
@@ -72,7 +74,7 @@ const SelectMenu = ({
               key={option.id}
               id={option.id}
               value={option.value}
-              type="checkbox"
+              type={menuType === null ? undefined : menuType}
               checked={currentOption.value === option.value ? true : false}
               onClick={() => {
                 console.log('e', option.label, option.value, option.id)

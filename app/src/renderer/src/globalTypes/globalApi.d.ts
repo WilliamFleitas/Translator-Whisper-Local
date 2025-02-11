@@ -40,9 +40,13 @@ export type ApiResponse<T> =
       success: false
       error: string
     }
-
+export type DurationTimeType = 'unlimited' | 60 | 600 | 1800 | 3600
 export interface Api {
-  startStreaming: (device: 'speaker' | 'mic') => Promise<ApiResponse<StartStreamingType>>
+  startStreaming: (
+    device: 'speaker' | 'mic',
+    duration: DurationTimeType
+  ) => Promise<ApiResponse<StartStreamingType>>
+  stopStreaming: () => Promise<ApiResponse<{ status: string }>>
   getAudioDevices: () => Promise<ApiResponse<DefaultAudioDeviceType[]>>
   setVoicemeeterOutput: (deviceName: string, deviceIndex: number) => Promise<ApiResponse<string>>
   getDefaultAudioDevice: () => Promise<ApiResponse<DefaultAudioDeviceType>>
