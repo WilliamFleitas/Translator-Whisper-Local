@@ -87,9 +87,9 @@ const TranslatorController = ({
         setTranscriptionInterim('')
         setIsCapturingAudio(false)
       }
-    } catch (err) {
+    } catch (err: any) {
       console.log('StartRecording error', err)
-      setTranscriptionError(err)
+      setTranscriptionError(err.message as string)
       setIsCapturingAudio(false)
     }
   }

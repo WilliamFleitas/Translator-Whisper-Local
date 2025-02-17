@@ -29,7 +29,9 @@ const CustomTextarea = ({
 interface TranslatorTextareaPropsType {
   translatorContent: string
 }
-const TranslatorTextarea = ({translatorContent}: TranslatorTextareaPropsType): React.ReactElement => {
+const TranslatorTextarea = ({
+  translatorContent
+}: TranslatorTextareaPropsType): React.ReactElement => {
   const [text1, setText1] = useState('')
   const [text2, setText2] = useState('')
   const textarea1Ref = useRef<HTMLTextAreaElement | null>(null)
@@ -38,7 +40,7 @@ const TranslatorTextarea = ({translatorContent}: TranslatorTextareaPropsType): R
   const handleTextareaChange = (event): void => {
     const inputValue = event.target.value
     setText1(inputValue)
-    // setText2(inputValue)
+    setText2(inputValue)
     event.target.style.height = 'auto'
     event.target.style.height = `${event.target.scrollHeight}px`
   }

@@ -72,7 +72,7 @@ const SelectMenu = ({
           optionsData.map((option) => (
             <MenuItem
               key={option.id}
-              id={option.id}
+              id={option.id.toString()}
               value={option.value}
               type={menuType === null ? undefined : menuType}
               checked={currentOption.value === option.value ? true : false}

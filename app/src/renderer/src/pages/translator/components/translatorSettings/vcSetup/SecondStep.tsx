@@ -53,7 +53,7 @@ const SecondStep = ({
     }
     try {
       const response: ApiResponse<SetVCSetupType> = await window.api.setVCSetup(
-        device_data ? device_data.value : currentOption.value
+        device_data ? device_data.value.toString() : currentOption.value.toString()
       )
       if (response.success) {
         setVcSetupMessageData(response.data)
@@ -101,9 +101,9 @@ const SecondStep = ({
         console.log('asara22', findObj)
         if (findObj) {
           console.log('asara23332')
-          setCurrentOption((prev) => {
+          setCurrentOption(() => {
             const optionObj = {
-              label: findObj.value,
+              label: findObj.label,
               value: findObj.value,
               id: findObj.id
             }
@@ -188,7 +188,7 @@ const SecondStep = ({
             <button
               type="button"
               title="Update Default audio device"
-              className="flex flex-col text-center items-center justify-start px-6 py-4 border rounded-md bg-[#002634] border-2 border-green-600 text-green-600"
+              className="flex flex-col text-center items-center justify-start px-6 py-4 rounded-md bg-[#002634] border-2 border-green-600 text-green-600"
               onClick={() => {
                 handleGetDefaultAudioDevice()
                 handleCheckIfVoicemeeterIsRunning(false)

@@ -1,6 +1,7 @@
 import { Routes, Route, BrowserRouter } from 'react-router-dom'
-import TestPage from './pages/TestPage'
+// import TestPage from './pages/TestPage'
 import TranslatorPage from './pages/translator/TranslatorPage'
+import CheckDependencies from './pages/checkDependencies/CheckDependencies'
 
 const PUBLIC_URL = ''
 
@@ -8,9 +9,10 @@ function AppRoutes(): JSX.Element {
   return (
     <BrowserRouter basename={PUBLIC_URL}>
       <Routes>
-        <Route path="/*" element={<TranslatorPage />} />
+        <Route path="/*" element={<CheckDependencies />} />
+        <Route path="checking-dependencies" element={<CheckDependencies />} />
         <Route path="translator" element={<TranslatorPage />} />
-        <Route path="test" element={<TestPage />} />
+        {/* <Route path="test" element={<TestPage />} /> */}
         {/* 
           <Route path='/settings/*' element={<UserSettingsPage />} /> */}
         <Route

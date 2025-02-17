@@ -30,7 +30,36 @@ export interface StartStreamingType {
     from_finalize: boolean
   }
 }
-
+export type AvailableModelsType = {
+  model: string
+  installed: boolean
+}
+export type DownloadModelStatusType = {
+  model_name: string
+  status: number
+  message: string
+}
+export interface WhisperHelpersType {
+  type: 'get_available_models' | 'download_model'
+  available_models?: AvailableModelsType[]
+  download_model_status?: DownloadModelStatusType
+}
+export type HelperNameType = 'get_available_models' | 'download_model'
+export type WhisperModelListType =
+  | 'tiny'
+  | 'base'
+  | 'small'
+  | 'medium'
+  | 'large-v1'
+  | 'large-v2'
+  | 'large-v3'
+  | 'large'
+  | 'large-v3-turbo'
+  | 'turbo'
+  | 'tiny.en'
+  | 'base.en'
+  | 'small.en'
+  | 'medium.en'
 export type ApiResponse<T> =
   | {
       success: true
@@ -42,6 +71,11 @@ export type ApiResponse<T> =
     }
 export type DurationTimeType = 'unlimited' | 60 | 600 | 1800 | 3600
 export interface Api {
+  checkDependencies: () => Promise<any>
+  whisperHelpers: (
+    helperName: HelperNameType,
+    model_name?: WhisperModelListType
+  ) => Promise<ApiResponse<WhisperHelpersType>>
   startStreaming: (
     device: 'speaker' | 'mic',
     duration: DurationTimeType

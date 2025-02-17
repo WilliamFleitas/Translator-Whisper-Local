@@ -36,6 +36,39 @@ interface StartStreamingType {
     from_finalize: boolean
   }
 }
+interface CheckGraphicCardType {
+  gpu_type: string
+  message: string
+}
+
+export interface WhisperHelpersType {
+  type: 'get_available_models' | 'download_model'
+  available_models?: {
+    model: string
+    installed: boolean
+  }[]
+  download_model_status?: {
+    model_name: string
+    status: number
+    message: string
+  }
+}
+export type HelperNameType = 'get_available_models' | 'download_model'
+export type WhisperModelListType =
+  | 'tiny'
+  | 'base'
+  | 'small'
+  | 'medium'
+  | 'large-v1'
+  | 'large-v2'
+  | 'large-v3'
+  | 'large'
+  | 'large-v3-turbo'
+  | 'turbo'
+  | 'tiny.en'
+  | 'base.en'
+  | 'small.en'
+  | 'medium.en'
 
 export type ApiResponse<T> =
   | {
@@ -48,6 +81,11 @@ export type ApiResponse<T> =
     }
 
 export interface Api {
+  checkDependencies: () => Promise<ApiResponse<CheckGraphicCardType>>
+  whisperHelpers: (
+    helperName: HelperNameType,
+    model_name?: WhisperModelListType
+  ) => Promise<ApiResponse<WhisperHelpersType>>
   startStreaming: (
     device: 'speaker' | 'mic',
     durationTime: 'unlimited' | 60 | 600 | 1800 | 3600
@@ -69,6 +107,12 @@ export interface Api {
 }
 
 const api: Api = {
+  checkDependencies: async () => {
+    return await ipcRenderer.invoke('check-dependencies')
+  },
+  whisperHelpers: async (helperName, model_name) => {
+    return await ipcRenderer.invoke('whisper-helpers', helperName, model_name)
+  },
   startStreaming: async (device, durationTime) => {
     return await ipcRenderer.invoke('start-streaming', device, durationTime)
   },

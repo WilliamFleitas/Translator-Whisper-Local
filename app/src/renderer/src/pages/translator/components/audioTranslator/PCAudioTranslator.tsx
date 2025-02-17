@@ -2,7 +2,8 @@ import { StartStreamingType } from '../../../../globalTypes/globalApi'
 import { useEffect, useState } from 'react'
 import TranslatorTextarea from './assets/TranslatorTextarea'
 import TranslatorController from './assets/TranslatorController'
-import TranslatorSettings from '../translatorSettings/TranslatorSettings'
+import WhisperModels from './assets/WhisperModels'
+// import TranslatorSettings from '../translatorSettings/TranslatorSettings'
 
 const PCAudioTranslator: React.FC = () => {
   const [transcriptionSentence, setTranscriptionSentence] = useState<string>('')
@@ -25,7 +26,7 @@ const PCAudioTranslator: React.FC = () => {
       }
     }
 
-    const handleStreamingError = (event: any, data: string): void => {
+    const handleStreamingError = (_event: any, data: string): void => {
       setTranscriptionError(data)
       console.log('dasdas3232', data)
     }
@@ -38,9 +39,10 @@ const PCAudioTranslator: React.FC = () => {
       window.api.removeListener('streaming-error', handleStreamingError)
     }
   }, [])
-  console.log('dasdas22', transcriptionSentence)
+  console.log('dasdas22', transcriptionSentence, transcriptionError)
   return (
     <article className=" flex flex-col text-start items-start justify-start w-full h-fit py-6 gap-4">
+      <WhisperModels />
       <TranslatorController
         isCapturingAudio={isCapturingAudio}
         setIsCapturingAudio={setIsCapturingAudio}
