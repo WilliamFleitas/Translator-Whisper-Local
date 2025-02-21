@@ -6,3 +6,4 @@ out
 .env
 credentials.json
 venv/
+package-lock.json

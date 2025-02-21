@@ -6,7 +6,7 @@ import {
   DefaultAudioDeviceType,
   SetVCSetupType
 } from '@renderer/globalTypes/globalApi'
-import SelectMenu, { MenuOptionType } from '../../../../components/menu/SelectMenu'
+import SelectMenu, { MenuOptionType } from '../../../../../components/menu/SelectMenu'
 import { useEffect, useState } from 'react'
 import { FaRegEdit } from 'react-icons/fa'
 
@@ -53,7 +53,7 @@ const SecondStep = ({
     }
     try {
       const response: ApiResponse<SetVCSetupType> = await window.api.setVCSetup(
-        device_data ? device_data.value : currentOption.value
+        device_data ? device_data.value.toString() : currentOption.value.toString()
       )
       if (response.success) {
         setVcSetupMessageData(response.data)
@@ -101,9 +101,9 @@ const SecondStep = ({
         console.log('asara22', findObj)
         if (findObj) {
           console.log('asara23332')
-          setCurrentOption((prev) => {
+          setCurrentOption(() => {
             const optionObj = {
-              label: findObj.value,
+              label: findObj.label,
               value: findObj.value,
               id: findObj.id
             }
@@ -119,7 +119,7 @@ const SecondStep = ({
     }
   }, [optionsData])
   return (
-    <div className="bg-zinc-700 w-full flex flex-col py-4 px-6 md:px-10 gap-4">
+    <div className="bg-[#002634] w-full flex flex-col py-4 px-6 md:px-10 gap-4">
       {lockSelectedOutputDevice.lock_status ? (
         <section className="flex flex-col text-start items-start justify-start w-full h-fit gap-4">
           <div className="flex flex-row flex-wrap gap-4 text-start items-center justify-between w-full h-fit">
@@ -188,7 +188,7 @@ const SecondStep = ({
             <button
               type="button"
               title="Update Default audio device"
-              className="flex flex-col text-center items-center justify-start px-6 py-4 border rounded-md bg-[#002634] border-2 border-green-600 text-green-600"
+              className="flex flex-col text-center items-center justify-start px-6 py-4 rounded-md bg-[#002634] border-2 border-green-600 text-green-600"
               onClick={() => {
                 handleGetDefaultAudioDevice()
                 handleCheckIfVoicemeeterIsRunning(false)
@@ -226,22 +226,22 @@ const SecondStep = ({
             <strong className="text-[0.9rem]">Output devices:</strong>
             <div className=" flex flex-col flex-grow md:flex-grow-0 md:w-fit">
               <SelectMenu
-                viewScroll="initial"
-                placeX="left"
+                viewScroll="close"
+                placeX="right"
                 placeY="bottom"
                 gap={1}
                 shift={0}
-                portal={true}
-                position="initial"
+                portal={false}
+                position="anchor"
                 optionsData={optionsData ? optionsData : []}
                 currentOption={currentOption}
                 handleOptionChange={handleSelectedOptionChange}
                 disableButton={lockSelectedOutputDevice.lock_status}
-                customButton={
-                  <span className="bg-[#686565] flex flex-row text-start items-center justify-center w-full h-fit py-2 px-6 rounded-md truncate text-[0.9rem]">
-                    {currentOption.label}
-                  </span>
+                customButtonClassName={
+                  'bg-[#414040] hover:bg-[#2c2c2c] flex flex-row text-start items-center justify-between w-full h-fit py-2 px-6 rounded-md text-[0.9rem] font-bold text-white gap-4'
                 }
+                customButtonContent={currentOption.label}
+                customButtonTitle={'Select output device'}
               />
             </div>
           </div>

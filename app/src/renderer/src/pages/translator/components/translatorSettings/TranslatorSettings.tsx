@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
-import { MenuOptionType } from '../../../components/menu/SelectMenu'
+import { MenuOptionType } from '../../../../components/menu/SelectMenu'
 import {
   ApiResponse,
   CheckVoicemeeterIsRunningType,
   DefaultAudioDeviceType,
   VCSettingsStatusType
-} from '../../../globalTypes/globalApi'
+} from '../../../../globalTypes/globalApi'
 import FirstStep from './vcSetup/FirstStep'
 import SecondStep from './vcSetup/SecondStep'
 
