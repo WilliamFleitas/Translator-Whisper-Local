@@ -4,7 +4,7 @@ import { IoCheckmarkSharp } from 'react-icons/io5'
 import {
   CheckVoicemeeterIsRunningType,
   VCSettingsStatusType
-} from '../../../../globalTypes/globalApi'
+} from '../../../../../globalTypes/globalApi'
 
 interface FirstStepPropsType {
   voicemeeterIsRunning: CheckVoicemeeterIsRunningType | null

@@ -3,13 +3,50 @@ import path, { join } from 'path'
 import dotenv from 'dotenv'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import { spawn } from 'child_process'
-
+import { spawn, ChildProcess, exec } from 'child_process'
+import fs from 'fs'
+import {
+  ApiResponse,
+  AudioLanguageType,
+  DeviceType,
+  DurationTimeType,
+  HelperNameType,
+  ProcessDevicesType,
+  StartStreamingType,
+  WhisperHelpersType,
+  WhisperModelListType,
+  CheckGraphicCardType
+} from '../preload'
 dotenv.config()
 
 let tray: Tray | null = null
 let mainWindow: BrowserWindow | null = null
 let overlayWindow: BrowserWindow | null = null
+const isPackaged = app.isPackaged
+
+const getScriptPath = (packagePath: string[], devPath: string): any => {
+  return isPackaged
+    ? path.join(
+        app.getPath('userData').replace('Roaming', 'Local\\Programs'),
+        'resources',
+        'src',
+        'main',
+        'backend',
+        'utils',
+        ...packagePath
+      )
+    : path.resolve(__dirname, `../../src/main/backend/utils/${devPath}`)
+}
+
+const venvPython = isPackaged
+  ? path.join(
+      app.getPath('userData').replace('Roaming', 'Local\\Programs'),
+      'resources',
+      'venv',
+      'Scripts',
+      'python.exe'
+    )
+  : path.resolve(__dirname, '../../venv/Scripts/python')
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -117,15 +154,23 @@ ipcMain.on('toggle-overlay', (_event, shouldShow: boolean) => {
 
 ipcMain.handle(
   'voicemeeter-api-calls',
-  async (event, queryType: 'isRunning' | 'open' | 'close') => {
+  async (_event, queryType: 'isRunning' | 'open' | 'close') => {
     return new Promise((resolve) => {
       const vcStatusPath = 'getVoicemeeterStatus.py'
       const vcRunOrClosePath = 'openOrCloseVoicemeeter.py'
-      const scriptPath = path.resolve(
-        __dirname,
-        `../../src/main/backend/utils/voicemeeterApi/${queryType === 'open' || queryType === 'close' ? vcRunOrClosePath : vcStatusPath}`
+      const scriptPath = getScriptPath(
+        [
+          'voicemeeterApi',
+          `${queryType === 'open' || queryType === 'close' ? vcRunOrClosePath : vcStatusPath}`
+        ],
+        `voicemeeterApi/${queryType === 'open' || queryType === 'close' ? vcRunOrClosePath : vcStatusPath}`
       )
-      const venvPython = path.resolve(__dirname, '../../venv/Scripts/python')
+      if (isPackaged && !fs.existsSync(venvPython)) {
+        return resolve({
+          success: false,
+          error: `Python executable not found at: ${venvPython}`
+        })
+      }
 
       const pythonProcess = spawn(venvPython, ['-u', scriptPath, queryType])
 
@@ -144,7 +189,7 @@ ipcMain.handle(
           try {
             const response = JSON.parse(outputData.trim())
             resolve(response)
-          } catch (error) {
+          } catch (error: any) {
             console.error(`Error parsing JSON output: ${error.message}`)
             resolve({
               success: false,
@@ -161,13 +206,18 @@ ipcMain.handle(
     })
   }
 )
-ipcMain.handle('get_VC_settings_status', async (event) => {
+ipcMain.handle('get_VC_settings_status', async () => {
   return new Promise((resolve) => {
-    const scriptPath = path.resolve(
-      __dirname,
-      `../../src/main/backend/utils/voicemeeterApi/getVCSettingsStatus.py`
+    const scriptPath = getScriptPath(
+      ['voicemeeterApi', 'getVCSettingsStatus.py'],
+      'voicemeeterApi/getVCSettingsStatus.py'
     )
-    const venvPython = path.resolve(__dirname, '../../venv/Scripts/python')
+    if (isPackaged && !fs.existsSync(venvPython)) {
+      return resolve({
+        success: false,
+        error: `Python executable not found at: ${venvPython}`
+      })
+    }
 
     const pythonProcess = spawn(venvPython, ['-u', scriptPath])
 
@@ -186,7 +236,7 @@ ipcMain.handle('get_VC_settings_status', async (event) => {
         try {
           const response = JSON.parse(outputData.trim())
           resolve(response)
-        } catch (error) {
+        } catch (error: any) {
           console.error(`Error parsing JSON output: ${error.message}`)
           resolve({
             success: false,
@@ -203,14 +253,18 @@ ipcMain.handle('get_VC_settings_status', async (event) => {
   })
 })
 
-ipcMain.handle('set_VC_setup', async (event, device_name: string) => {
+ipcMain.handle('set_VC_setup', async (_event, device_name: string) => {
   return new Promise((resolve) => {
-    const scriptPath = path.resolve(
-      __dirname,
-      `../../src/main/backend/utils/voicemeeterApi/setVCSetup.py`
+    const scriptPath = getScriptPath(
+      ['voicemeeterApi', 'setVCSetup.py'],
+      'voicemeeterApi/setVCSetup.py'
     )
-    const venvPython = path.resolve(__dirname, '../../venv/Scripts/python')
-
+    if (isPackaged && !fs.existsSync(venvPython)) {
+      return resolve({
+        success: false,
+        error: `Python executable not found at: ${venvPython}`
+      })
+    }
     const pythonProcess = spawn(venvPython, ['-u', scriptPath, device_name])
 
     let outputData = ''
@@ -228,7 +282,7 @@ ipcMain.handle('set_VC_setup', async (event, device_name: string) => {
         try {
           const response = JSON.parse(outputData.trim())
           resolve(response)
-        } catch (error) {
+        } catch (error: any) {
           console.error(`Error parsing JSON output: ${error.message}`)
           resolve({
             success: false,
@@ -245,14 +299,18 @@ ipcMain.handle('set_VC_setup', async (event, device_name: string) => {
   })
 })
 
-ipcMain.handle('find_default_audio_device', async (event) => {
+ipcMain.handle('find_default_audio_device', async () => {
   return new Promise((resolve) => {
-    const scriptPath = path.resolve(
-      __dirname,
-      '../../src/main/backend/utils/getUserDefaultAudioDevice.py'
+    const scriptPath = getScriptPath(
+      ['getUserDefaultAudioDevice.py'],
+      'getUserDefaultAudioDevice.py'
     )
-    const venvPython = path.resolve(__dirname, '../../venv/Scripts/python')
-
+    if (isPackaged && !fs.existsSync(venvPython)) {
+      return resolve({
+        success: false,
+        error: `Python executable not found at: ${venvPython}`
+      })
+    }
     const pythonProcess = spawn(venvPython, ['-u', scriptPath])
 
     let outputData = ''
@@ -270,7 +328,7 @@ ipcMain.handle('find_default_audio_device', async (event) => {
         try {
           const response = JSON.parse(outputData.trim())
           resolve(response)
-        } catch (error) {
+        } catch (error: any) {
           console.error(`Error parsing JSON output: ${error.message}`)
           resolve({
             success: false,
@@ -287,14 +345,16 @@ ipcMain.handle('find_default_audio_device', async (event) => {
   })
 })
 
-ipcMain.handle('find-audio-devices', async (event) => {
+ipcMain.handle('find-audio-devices', async () => {
   return new Promise((resolve) => {
-    const scriptPath = path.resolve(
-      __dirname,
-      '../../src/main/backend/utils/getUserAudioDevices.py'
-    )
-    const venvPython = path.resolve(__dirname, '../../venv/Scripts/python')
+    const scriptPath = getScriptPath(['getUserAudioDevices.py'], 'getUserAudioDevices.py')
 
+    if (isPackaged && !fs.existsSync(venvPython)) {
+      return resolve({
+        success: false,
+        error: `Python executable not found at: ${venvPython}`
+      })
+    }
     const pythonProcess = spawn(venvPython, ['-u', scriptPath])
 
     let outputData = ''
@@ -312,7 +372,7 @@ ipcMain.handle('find-audio-devices', async (event) => {
         try {
           const response = JSON.parse(outputData.trim())
           resolve(response)
-        } catch (error) {
+        } catch (error: any) {
           console.error(`Error parsing JSON output: ${error.message}`)
           resolve({
             success: false,
@@ -329,53 +389,246 @@ ipcMain.handle('find-audio-devices', async (event) => {
   })
 })
 
-ipcMain.handle('start-streaming', async (event, device) => {
-  return new Promise((resolve, reject) => {
-    const scriptPath = path.resolve(__dirname, '../../src/main/backend/utils/speechToTextPy.py')
-    const venvPython = path.resolve(__dirname, '../../venv/Scripts/python')
+let startStreamingProcess: ChildProcess | null = null
 
-    const pythonProcess = spawn(venvPython, ['-u', scriptPath, device])
+ipcMain.handle(
+  'start-streaming',
+  async (
+    event,
+    device: DeviceType,
+    durationTime: DurationTimeType,
+    processDevice: ProcessDevicesType,
+    modelName: WhisperModelListType,
+    audio_language: AudioLanguageType
+  ) => {
+    return new Promise((resolve) => {
+      const scriptPath = getScriptPath(['speechToTextPy.py'], 'speechToTextPy.py')
 
-    let outputData = ''
+      if (isPackaged && !fs.existsSync(venvPython)) {
+        return resolve({
+          success: false,
+          error: `Python executable not found at: ${venvPython}`
+        })
+      }
+      if (startStreamingProcess) {
+        return resolve({ success: false, error: 'The capture is already running' })
+      }
 
-    pythonProcess.stdout.on('data', (data) => {
-      const receivedData = data.toString().trim()
-      outputData += receivedData
+      startStreamingProcess = spawn(venvPython, [
+        '-u',
+        scriptPath,
+        device,
+        durationTime,
+        processDevice,
+        modelName,
+        audio_language
+      ])
+      let outputData: ApiResponse<StartStreamingType> | null = null
 
-      try {
-        const response = JSON.parse(receivedData)
-        if (response.success) {
-          event.sender.send('streaming-data', response.data)
+      if (startStreamingProcess && startStreamingProcess.stdout && startStreamingProcess.stderr) {
+        startStreamingProcess.stdout.on('data', (data) => {
+          const receivedData = data.toString().trim()
+          try {
+            const response = JSON.parse(receivedData)
+            if (response.success) {
+              if (response.data.status !== undefined) {
+                if (response.data.status === 0) {
+                  event.sender.send('streaming-data', response)
+                } else {
+                  outputData = response
+                }
+              }
+            } else {
+              throw Error(response.error)
+            }
+          } catch (error: any) {
+            startStreamingProcess?.kill()
+            startStreamingProcess = null
+            return resolve({
+              success: false,
+              error: error instanceof Error ? error.message : String(error)
+            })
+          }
+        })
+
+        startStreamingProcess.stderr.on('data', (data) => {
+          const message = data.toString().trim()
+          console.log('mesage2tderr:', message)
+        })
+      }
+
+      startStreamingProcess.on('error', (error) => {
+        startStreamingProcess = null
+        return resolve({ success: false, error: error.message })
+      })
+
+      startStreamingProcess.on('close', (code) => {
+        if (code === 0) {
+          resolve(outputData)
         } else {
-          throw Error(response.error)
+          resolve({ success: false, error: 'Speech to text script failed' })
         }
-      } catch (error) {
-        console.log(error)
-        event.sender.send('streaming-error', error)
-      }
+        startStreamingProcess = null
+      })
     })
+  }
+)
 
-    pythonProcess.stderr.on('data', (data) => {
-      const errorMessage = data.toString().trim()
-      console.log(`Python script error: ${errorMessage}`)
-    })
+ipcMain.handle('stop-streaming', async () => {
+  if (startStreamingProcess !== null) {
+    try {
+      if (!startStreamingProcess.killed) {
+        startStreamingProcess.kill()
+        startStreamingProcess = null
 
-    pythonProcess.on('close', (code, signal) => {
-      if (code === 0) {
-        resolve({ success: true, message: 'Transcription completed.' })
+        return { success: true, data: { status: 'Capture finished' } }
       } else {
-        const errorMsg = `Python script exited with code ${code}. Signal: ${signal}. Check logs for details.`
-        console.log(errorMsg)
+        return { success: false, data: { status: 'The process was already stopped.' } }
       }
+    } catch (error) {
+      console.error('Error stopping the Python process:', error)
+      return { success: false, data: { status: 'Error stopping the process' } }
+    }
+  } else {
+    console.log('No process is running.')
+    return { success: false, data: { status: 'No process is running.' } }
+  }
+})
+
+ipcMain.handle('check-dependencies', async (event) => {
+  return new Promise((resolve, reject) => {
+    const scriptPath = getScriptPath(['checkGraphicCard.py'], 'checkGraphicCard.py')
+    if (isPackaged && !fs.existsSync(venvPython)) {
+      return reject({
+        success: false,
+        error: `Python executable not found at: ${venvPython}`
+      })
+    }
+    const process = spawn(venvPython, ['-u', scriptPath])
+
+    let outputData: ApiResponse<CheckGraphicCardType>
+
+    process.stdout.on('data', (data) => {
+      const messages = data.toString().trim().split('\n')
+
+      messages.forEach((message) => {
+        try {
+          const response: ApiResponse<CheckGraphicCardType> = JSON.parse(message)
+          if (response.success) {
+            outputData = response
+            if (response.data.status !== undefined && Number(response.data.status) === 2) {
+              if (isPackaged) {
+                app.relaunch()
+                app.exit()
+              } else {
+                exec('npm run dev', (err, stdout, stderr) => {
+                  if (err) console.error('Error trying to reset:', err)
+                  if (stdout) console.log(stdout)
+                  if (stderr) console.error(stderr)
+                })
+                app.exit()
+              }
+            }
+            if (response.data.status !== undefined && Number(response.data.status) === 0) {
+              event.sender.send('check-dependencies-data', response)
+            }
+          } else {
+            throw Error(response.error)
+          }
+        } catch (error: any) {
+          process.kill()
+          return resolve({
+            success: false,
+            error: error instanceof Error ? error.message : String(error)
+          })
+        }
+      })
     })
 
-    pythonProcess.on('error', (err) => {
-      console.error('Error spawning Python process:', err)
-      event.sender.send('streaming-error', `Error spawning process: ${err.message}`)
-      reject({ success: false, error: `Error spawning Python process: ${err.message}` })
+    process.stderr.on('data', (data) => {
+      const message = data.toString().trim()
+      console.log('mesagetderr:', message)
+    })
+
+    process.on('error', (error) => {
+      return resolve({ success: false, error: error.message })
+    })
+
+    process.on('close', (code) => {
+      if (code === 0) {
+        resolve(outputData)
+      } else {
+        resolve({ success: false, error: 'Dependency check script failed' })
+      }
     })
   })
 })
+
+ipcMain.handle(
+  'whisper-helpers',
+  async (_event, helperName: HelperNameType, model_name?: WhisperModelListType) => {
+    return new Promise((resolve, reject) => {
+      const getModelsPath = 'getAvailableModels.py'
+      const checkInstaledModelsPath = 'downloadModel.py'
+      const scriptPath = getScriptPath(
+        [
+          'whisper',
+          helperName === 'get_available_models' ? getModelsPath : checkInstaledModelsPath
+        ],
+        `whisper/${helperName === 'get_available_models' ? getModelsPath : checkInstaledModelsPath}`
+      )
+
+      if (isPackaged && !fs.existsSync(venvPython)) {
+        return resolve({
+          success: false,
+          error: `Python executable not found at: ${venvPython}`
+        })
+      }
+      const process = spawn(venvPython, ['-u', scriptPath, model_name as WhisperModelListType])
+
+      let outputData: WhisperHelpersType
+
+      process.stdout.on('data', (data) => {
+        const messages = data.toString().trim().split('\n')
+
+        try {
+          const response = JSON.parse(messages)
+          if (response.success) {
+            if (helperName === 'get_available_models') {
+              outputData = { type: helperName, available_models: response.data }
+            } else if (helperName === 'download_model') {
+              outputData = { type: helperName, download_model_status: response.data }
+            }
+          } else {
+            throw Error(response.error)
+          }
+        } catch (error: any) {
+          return resolve({
+            success: false,
+            error: error instanceof Error ? error.message : String(error)
+          })
+        }
+      })
+
+      process.stderr.on('data', (data) => {
+        const message = data.toString().trim()
+        console.log('mesage2tderr:', message)
+      })
+
+      process.on('error', (error) => {
+        return resolve({ success: false, error: error.message })
+      })
+
+      process.on('close', (code) => {
+        if (code === 0) {
+          resolve({ success: true, data: outputData })
+        } else {
+          reject({ success: false, error: `There was an error running ${helperName} script` })
+        }
+      })
+    })
+  }
+)
 
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.electron')

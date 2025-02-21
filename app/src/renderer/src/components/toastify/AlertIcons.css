@@ -1,0 +1,67 @@
+
+
+
+.Toastify__toast {
+    padding: 10px 20px 10px 20px;
+    margin: 0px 0px 10px 0px;
+    min-width: 25rem;
+    min-height: fit-content;
+    background-color: #002634;
+    border: 1px solid #011f2b;
+    overflow: hidden;
+    border-radius: 6px;
+    isolation: isolate;
+    box-shadow: none;
+    gap: 0.6rem;
+    text-align: center;
+    align-items: center;
+  }
+
+  .Toastify__toast .Toastify__toast-container {
+    background-color: purple;
+    padding: 0px;
+    margin: 0px;
+  }
+  .Toastify__toast .toast-default-dark {
+    background-color: #15191e !important; 
+    color: #fff !important; 
+    padding: 0px 0px ;
+    margin: 0px;
+  }
+  
+  .Toastify__toast .toast-default-light {
+    background-color: #fff !important; 
+    color: #000 !important;
+    padding: 0px 0px ;
+    margin: 0px;
+  }
+
+  .Toastify__toast .Toastify__toast-body {
+    padding: 0px;
+    margin: 0px;
+    display: flex;
+    flex-direction: row;
+    text-align: center;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: center;
+    justify-items: center;
+    align-content: center;
+    font-size: 0.9rem;
+    line-height: 0;
+  }
+
+
+  .Toastify__toast .Toastify__progress-bar--error {
+    background-color: #7b2a2a;
+  }
+  .Toastify__toast .Toastify__progress-bar--success {
+    background-color: #2d5b42;
+  }
+  .Toastify__toast .Toastify__progress-bar--warning {
+    background-color: #7b2a2a;
+  }
+  .Toastify__toast .Toastify__progress-bar--info {
+    background-color: #1c64f2;
+  }
+   
