@@ -27,18 +27,16 @@ interface SetVCSetupType {
   message: string
 }
 
-interface StartStreamingType {
-  sentence: string
-  words: { word: string }[]
-  channel_info: {
-    is_final: boolean
-    speech_final: boolean
-    from_finalize: boolean
-  }
+export interface StartStreamingType {
+  status: number
+  transcription?: string
+  message?: string
 }
-interface CheckGraphicCardType {
-  gpu_type: string
-  message: string
+export interface CheckGraphicCardType {
+  gpu_type?: string
+  message?: string
+  interim_message?: string
+  status: number
 }
 
 export interface WhisperHelpersType {
@@ -69,7 +67,30 @@ export type WhisperModelListType =
   | 'base.en'
   | 'small.en'
   | 'medium.en'
-
+export type DeviceType = 'speaker' | 'mic'
+export type ProcessDevicesType = 'cpu' | 'cuda' | 'hip'
+export type DurationTimeType = 'unlimited' | '60' | '600' | '1800' | '3600'
+export type AudioLanguageType =
+  | 'en'
+  | 'es'
+  | 'fr'
+  | 'de'
+  | 'it'
+  | 'pt'
+  | 'ru'
+  | 'ar'
+  | 'zh'
+  | 'ja'
+  | 'ko'
+  | 'hi'
+  | 'tr'
+  | 'pl'
+  | 'nl'
+  | 'sv'
+  | 'da'
+  | 'no'
+  | 'fi'
+  | 'cs'
 export type ApiResponse<T> =
   | {
       success: true
@@ -87,8 +108,11 @@ export interface Api {
     model_name?: WhisperModelListType
   ) => Promise<ApiResponse<WhisperHelpersType>>
   startStreaming: (
-    device: 'speaker' | 'mic',
-    durationTime: 'unlimited' | 60 | 600 | 1800 | 3600
+    device: DeviceType,
+    durationTime: DurationTimeType,
+    processDevice: ProcessDevicesType,
+    modelName: WhisperModelListType,
+    audio_language: AudioLanguageType
   ) => Promise<ApiResponse<StartStreamingType>>
   stopStreaming: () => Promise<ApiResponse<{ status: string }>>
   getAudioDevices: () => Promise<ApiResponse<AudioDeviceDataType[]>>
@@ -113,8 +137,15 @@ const api: Api = {
   whisperHelpers: async (helperName, model_name) => {
     return await ipcRenderer.invoke('whisper-helpers', helperName, model_name)
   },
-  startStreaming: async (device, durationTime) => {
-    return await ipcRenderer.invoke('start-streaming', device, durationTime)
+  startStreaming: async (device, durationTime, processDevice, model_name, audio_language) => {
+    return await ipcRenderer.invoke(
+      'start-streaming',
+      device,
+      durationTime,
+      processDevice,
+      model_name,
+      audio_language
+    )
   },
   stopStreaming: async () => {
     return await ipcRenderer.invoke('stop-streaming')

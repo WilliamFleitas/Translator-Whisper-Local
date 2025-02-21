@@ -21,14 +21,17 @@ export interface SetVCSetupType {
   message: string
 }
 
+export interface CheckGraphicCardType {
+  gpu_type?: string
+  message?: string
+  interim_message?: string
+  status: number
+}
+
 export interface StartStreamingType {
-  sentence: string
-  words: { word: string }[]
-  channel_info: {
-    is_final: boolean
-    speech_final: boolean
-    from_finalize: boolean
-  }
+  status: number
+  transcription?: string
+  message?: string
 }
 export type AvailableModelsType = {
   model: string
@@ -45,6 +48,7 @@ export interface WhisperHelpersType {
   download_model_status?: DownloadModelStatusType
 }
 export type HelperNameType = 'get_available_models' | 'download_model'
+
 export type WhisperModelListType =
   | 'tiny'
   | 'base'
@@ -60,6 +64,31 @@ export type WhisperModelListType =
   | 'base.en'
   | 'small.en'
   | 'medium.en'
+export type DeviceType = 'speaker' | 'mic'
+export type ProcessDevicesType = 'cpu' | 'cuda' | 'hip'
+export type DurationTimeType = 'unlimited' | '60' | '600' | '1800' | '3600'
+export type AudioLanguageType =
+  | 'en'
+  | 'es'
+  | 'fr'
+  | 'de'
+  | 'it'
+  | 'pt'
+  | 'ru'
+  | 'ar'
+  | 'zh'
+  | 'ja'
+  | 'ko'
+  | 'hi'
+  | 'tr'
+  | 'pl'
+  | 'nl'
+  | 'sv'
+  | 'da'
+  | 'no'
+  | 'fi'
+  | 'cs'
+
 export type ApiResponse<T> =
   | {
       success: true
@@ -69,16 +98,18 @@ export type ApiResponse<T> =
       success: false
       error: string
     }
-export type DurationTimeType = 'unlimited' | 60 | 600 | 1800 | 3600
 export interface Api {
-  checkDependencies: () => Promise<any>
+  checkDependencies: () => Promise<ApiResponse<CheckGraphicCardType>>
   whisperHelpers: (
     helperName: HelperNameType,
     model_name?: WhisperModelListType
   ) => Promise<ApiResponse<WhisperHelpersType>>
   startStreaming: (
-    device: 'speaker' | 'mic',
-    duration: DurationTimeType
+    device: DeviceType,
+    durationTime: DurationTimeType,
+    processDevice: ProcessDevicesType,
+    modelName: WhisperModelListType,
+    audio_language: AudioLanguageType
   ) => Promise<ApiResponse<StartStreamingType>>
   stopStreaming: () => Promise<ApiResponse<{ status: string }>>
   getAudioDevices: () => Promise<ApiResponse<DefaultAudioDeviceType[]>>

@@ -4,7 +4,8 @@
 body {
   align-items: flex-start;
   justify-content: flex-start;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   user-select: none;
   background-color: #333333;
   color: #ffffff;
@@ -19,3 +20,27 @@ body {
   flex-direction: column;
 }
 
+
+
+/* browser Webkit (Chrome, Safari) */
+::-webkit-scrollbar {
+  width: 0.4rem; 
+  height: 0.4rem
+}
+
+::-webkit-scrollbar-track {
+  background: transparent; 
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #ffffff33; 
+  border-radius: 1rem; 
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ffffff46;
+}
+
+.scroller-container::-webkit-scrollbar-corner {
+  background-color: transparent; 
+}

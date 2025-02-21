@@ -119,7 +119,7 @@ const SecondStep = ({
     }
   }, [optionsData])
   return (
-    <div className="bg-zinc-700 w-full flex flex-col py-4 px-6 md:px-10 gap-4">
+    <div className="bg-[#002634] w-full flex flex-col py-4 px-6 md:px-10 gap-4">
       {lockSelectedOutputDevice.lock_status ? (
         <section className="flex flex-col text-start items-start justify-start w-full h-fit gap-4">
           <div className="flex flex-row flex-wrap gap-4 text-start items-center justify-between w-full h-fit">
@@ -226,22 +226,22 @@ const SecondStep = ({
             <strong className="text-[0.9rem]">Output devices:</strong>
             <div className=" flex flex-col flex-grow md:flex-grow-0 md:w-fit">
               <SelectMenu
-                viewScroll="initial"
-                placeX="left"
+                viewScroll="close"
+                placeX="right"
                 placeY="bottom"
                 gap={1}
                 shift={0}
-                portal={true}
-                position="initial"
+                portal={false}
+                position="anchor"
                 optionsData={optionsData ? optionsData : []}
                 currentOption={currentOption}
                 handleOptionChange={handleSelectedOptionChange}
                 disableButton={lockSelectedOutputDevice.lock_status}
-                customButton={
-                  <span className="bg-[#686565] flex flex-row text-start items-center justify-center w-full h-fit py-2 px-6 rounded-md truncate text-[0.9rem]">
-                    {currentOption.label}
-                  </span>
+                customButtonClassName={
+                  'bg-[#414040] hover:bg-[#2c2c2c] flex flex-row text-start items-center justify-between w-full h-fit py-2 px-6 rounded-md text-[0.9rem] font-bold text-white gap-4'
                 }
+                customButtonContent={currentOption.label}
+                customButtonTitle={'Select output device'}
               />
             </div>
           </div>

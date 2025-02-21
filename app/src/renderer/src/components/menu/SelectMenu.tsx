@@ -2,6 +2,8 @@ import { Menu, MenuItem, MenuButton } from '@szhsin/react-menu'
 import '@szhsin/react-menu/dist/index.css'
 import '@szhsin/react-menu/dist/transitions/zoom.css'
 import './SelectMenu.css'
+import { IoIosArrowDown } from 'react-icons/io'
+import { useState } from 'react'
 
 // const DOPDOWN_Y_PLACE_OPTIONS = {
 //   top: "top",
@@ -27,27 +29,35 @@ interface SelectMenuPropsType {
   placeY: 'top' | 'bottom'
   placeX: 'left' | 'right' | 'center'
   viewScroll: 'auto' | 'initial' | 'close'
+  customButtonClassName: string
+  customButtonContent: string
+  customButtonTitle?: string
   portal: boolean
   position: 'anchor' | 'auto' | 'initial'
-  customButton: JSX.Element
   disableButton?: boolean
   menuType?: 'radio' | 'checkbox' | null
+  enableArrow?: boolean
 }
 const SelectMenu = ({
   optionsData,
   currentOption,
   handleOptionChange,
+  customButtonClassName,
+  customButtonTitle,
+  customButtonContent,
   placeY,
   placeX,
   gap,
   shift,
   viewScroll,
   portal = false,
+  enableArrow = false,
   position,
-  customButton,
   disableButton = false,
   menuType = 'checkbox'
 }: SelectMenuPropsType): JSX.Element => {
+  const [isOpen, setIsOpen] = useState<boolean>(false)
+
   return (
     <>
       <Menu
@@ -65,8 +75,25 @@ const SelectMenu = ({
         shift={shift}
         transition
         position={position}
+        overflow={'auto'}
         viewScroll={viewScroll}
-        menuButton={<MenuButton disabled={disableButton}>{customButton}</MenuButton>}
+        onMenuChange={(open) => setIsOpen(open.open)}
+        menuButton={
+          <MenuButton disabled={disableButton}>
+            <small title={customButtonTitle} className={customButtonClassName}>
+              {customButtonContent}
+              {enableArrow ? (
+                <IoIosArrowDown
+                  className={`w-5 h-5 min-w-5 min-h-5 transform transition-transform ${
+                    isOpen ? 'rotate-180' : 'rotate-0'
+                  }`}
+                />
+              ) : (
+                <></>
+              )}
+            </small>
+          </MenuButton>
+        }
       >
         {optionsData.length ? (
           optionsData.map((option) => (
@@ -77,7 +104,6 @@ const SelectMenu = ({
               type={menuType === null ? undefined : menuType}
               checked={currentOption.value === option.value ? true : false}
               onClick={() => {
-                console.log('e', option.label, option.value, option.id)
                 handleOptionChange({ label: option.label, value: option.value, id: option.id })
               }}
             >

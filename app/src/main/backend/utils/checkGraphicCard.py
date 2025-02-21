@@ -6,7 +6,7 @@ import json
 sys.stdout.reconfigure(line_buffering=True, write_through=True)
 
 def conver_to_json(text_to_convert):
-    return json.dumps({"interim_message": text_to_convert})
+    return json.dumps({ "success" : True, "data" : { "interim_message" : text_to_convert, "status": 0 }})
 
 def detect_gpu():
     """
@@ -62,7 +62,7 @@ def install_torch(gpu_type):
             "success": True,
             "data": {
                 "gpu_type": gpu_type,
-                "message": f"Torch is already installed for {gpu_type}."
+                "message": f"Torch is already installed for {gpu_type}.", "status": 1 
             }
         }
     
@@ -83,7 +83,7 @@ def install_torch(gpu_type):
             "success": True,
             "data": {
                 "gpu_type": gpu_type,
-                "message": f"Torch successfully installed for {gpu_type}."
+                "message": f"Torch successfully installed for {gpu_type}.", "status": 2 
             }
         }
     except subprocess.CalledProcessError as e:

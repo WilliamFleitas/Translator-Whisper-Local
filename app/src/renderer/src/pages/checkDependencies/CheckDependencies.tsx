@@ -1,24 +1,31 @@
+import DefaultLoading from '@renderer/components/loading/DefaultLoading'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { IoCheckmarkSharp } from 'react-icons/io5'
+import { ApiResponse, CheckGraphicCardType } from '@renderer/globalTypes/globalApi'
 
 const CheckDependencies = (): React.ReactElement => {
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [interimMessage, setInterimMessage] = useState<string>('')
+  const [currentIntMessage, setCurrentIntMessage] = useState<string>('')
+  const [checkDependenciesError, setCheckDependenciesError] = useState<string | null>(null)
   const navigate = useNavigate()
 
   useEffect(() => {
     async function check(): Promise<void> {
       try {
         const result = await window.api.checkDependencies()
-        console.log('result', result)
         if (result.success) {
-          console.log('resultresultresult', result)
-          navigate('/translator')
+          if (result.data.gpu_type) {
+            localStorage.setItem('process_device', result.data.gpu_type)
+            navigate('/translator')
+          }
         } else {
-          setError(result.error || 'An unknown error occurred')
+          throw Error(result.error)
         }
-      } catch (err) {
-        setError('Error communicating with backend')
+        setCurrentIntMessage('')
+      } catch (err: any) {
+        setCheckDependenciesError(err.message)
       } finally {
         setLoading(false)
       }
@@ -27,13 +34,22 @@ const CheckDependencies = (): React.ReactElement => {
     check()
   }, [])
   useEffect(() => {
-    const handleCheckDependenciesData = (_event: any, data: any): void => {
-      console.log('eventcheckdpen', data)
+    const handleCheckDependenciesData = (
+      _event: any,
+      data: ApiResponse<CheckGraphicCardType>
+    ): void => {
+      if (data.success) {
+        if (data.data.interim_message) {
+          setInterimMessage((prev) => {
+            return `${prev} _ ${data.data.interim_message}`
+          })
+          setCurrentIntMessage(data.data.interim_message)
+        }
+      }
     }
 
     const handleCheckDependenciesError = (_event: any, data: any): void => {
-      // setTranscriptionError(data)
-      console.log('eventcheckdError', data)
+      setCheckDependenciesError(data.error)
     }
 
     window.api.on('check-dependencies-data', handleCheckDependenciesData)
@@ -45,23 +61,59 @@ const CheckDependencies = (): React.ReactElement => {
     }
   }, [])
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white">
+    <div className="flex flex-col text-center items-center justify-center w-full min-h-screen  text-white md:p-10">
       {loading ? (
-        <div>
-          <h1 className="text-2xl font-bold">Checking dependencies...</h1>
-          <p className="text-gray-400">This may take a few seconds</p>
-          <div className="mt-4 animate-spin rounded-full h-10 w-10 border-t-4 border-blue-500"></div>
+        <div className="w-full md:w-fit  h-full min-h-screen md:h-fit md:min-h-[13rem] text-start items-center justify-center bg-gray-900 p-10 md:rounded-md flex flex-col">
+          <div className="flex flex-col w-fit h-fit gap-4 text-start items-start justify-start">
+            <strong className="text-[1.2rem]">
+              Checking dependencies, This may take a few seconds...
+            </strong>
+            <div className="flex flex-col gap-4 text-start items-start justify-start">
+              {interimMessage.length ? (
+                interimMessage.split('_').map((item, index) => {
+                  return item.length > 1 ? (
+                    <div
+                      key={index}
+                      className="text-[0.9rem] flex flex-row text-start items-center justify-start gap-4"
+                    >
+                      <IoCheckmarkSharp className="w-5 h-5 min-w-5 min-h-5 text-white" />
+                      <span>{item}</span>
+                    </div>
+                  ) : (
+                    <div key={index}></div>
+                  )
+                })
+              ) : (
+                <></>
+              )}
+            </div>
+            {currentIntMessage.length ? (
+              <div className="flex flex-row gap-4 text-start items-center justify-start">
+                <DefaultLoading size={2} color={'#fff'} />
+                <small className="text-[0.9rem]">{currentIntMessage}</small>
+              </div>
+            ) : (
+              <></>
+            )}
+          </div>
         </div>
-      ) : error ? (
-        <div className="text-center">
-          <h1 className="text-xl font-bold text-red-500">Error</h1>
-          <p>{error}</p>
-          <button
-            className="mt-4 px-4 py-2 bg-red-600 text-white rounded"
-            onClick={() => window.location.reload()}
-          >
-            Retry
-          </button>
+      ) : checkDependenciesError ? (
+        <div className="w-full md:w-fit  h-full min-h-screen md:h-fit md:min-h-[13rem] text-start items-center justify-center bg-gray-900 p-10 md:rounded-md flex flex-col">
+          <div className="flex flex-col w-fit h-fit gap-4 text-start items-start justify-start ">
+            <strong className="text-[1.2rem]">There was an error checking dependencies..</strong>
+            <small className="text-[0.9rem] flex flex-row gap-2 text-start items-center justify-start">
+              <span className="text-red-600 text-[0.9rem] font-bold">Error:</span>
+              {checkDependenciesError}
+            </small>
+            <div className="flex flex-col w-full h-fit text-start items-center justify-center gap-4">
+              <button
+                className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-bold"
+                onClick={() => window.location.reload()}
+              >
+                Retry
+              </button>
+            </div>
+          </div>
         </div>
       ) : null}
     </div>
