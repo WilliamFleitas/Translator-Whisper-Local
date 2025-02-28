@@ -4,6 +4,7 @@ import '@szhsin/react-menu/dist/transitions/zoom.css'
 import './SelectMenu.css'
 import { IoIosArrowDown } from 'react-icons/io'
 import { useState } from 'react'
+import { FaLock } from 'react-icons/fa'
 
 // const DOPDOWN_Y_PLACE_OPTIONS = {
 //   top: "top",
@@ -18,6 +19,8 @@ export type MenuOptionType = {
   label: string
   value: string | number
   id: number | string
+  disabled?: boolean
+  disabledTitle?: string
 }
 
 interface SelectMenuPropsType {
@@ -30,7 +33,8 @@ interface SelectMenuPropsType {
   placeX: 'left' | 'right' | 'center'
   viewScroll: 'auto' | 'initial' | 'close'
   customButtonClassName: string
-  customButtonContent: string
+  customButtonContent?: string
+  customIcon?: JSX.Element
   customButtonTitle?: string
   portal: boolean
   position: 'anchor' | 'auto' | 'initial'
@@ -43,6 +47,7 @@ const SelectMenu = ({
   currentOption,
   handleOptionChange,
   customButtonClassName,
+  customIcon,
   customButtonTitle,
   customButtonContent,
   placeY,
@@ -81,7 +86,7 @@ const SelectMenu = ({
         menuButton={
           <MenuButton disabled={disableButton}>
             <small title={customButtonTitle} className={customButtonClassName}>
-              {customButtonContent}
+              {customIcon ? customIcon : customButtonContent}
               {enableArrow ? (
                 <IoIosArrowDown
                   className={`w-5 h-5 min-w-5 min-h-5 transform transition-transform ${
@@ -103,11 +108,27 @@ const SelectMenu = ({
               value={option.value}
               type={menuType === null ? undefined : menuType}
               checked={currentOption.value === option.value ? true : false}
+              disabled={option.disabled !== undefined ? option.disabled : false}
+              className={'relative'}
               onClick={() => {
                 handleOptionChange({ label: option.label, value: option.value, id: option.id })
               }}
             >
-              {option.label}
+              {option.label}{' '}
+              {option.disabled ? (
+                <span
+                  title={
+                    option.disabledTitle !== undefined && option.disabledTitle.length > 0
+                      ? option.disabledTitle
+                      : ''
+                  }
+                  className="w-full h-full flex grow bg-primary-button-hover/20 absolute top-0 left-0 text-center items-center justify-center"
+                >
+                  <FaLock className="w-5 h-5 text-zinc-500" />
+                </span>
+              ) : (
+                <></>
+              )}
             </MenuItem>
           ))
         ) : (

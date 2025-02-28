@@ -11,8 +11,8 @@ interface DefaultAudioDeviceType {
   id: string
 }
 
-interface CheckVoicemeeterIsRunningType {
-  active: boolean
+export interface CheckVoicemeeterIsRunningType {
+  active?: boolean
   message: string
 }
 

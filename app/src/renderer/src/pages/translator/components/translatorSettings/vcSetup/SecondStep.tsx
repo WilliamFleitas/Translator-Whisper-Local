@@ -7,12 +7,12 @@ import {
   SetVCSetupType
 } from '@renderer/globalTypes/globalApi'
 import SelectMenu, { MenuOptionType } from '../../../../../components/menu/SelectMenu'
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { FaRegEdit } from 'react-icons/fa'
+import { VCStatusContext } from '@renderer/components/context/VCContext'
 
 interface SecondStepPropsType {
   currentDefaultAudioDevice: DefaultAudioDeviceType | null
-  //   currentOption: MenuOptionType
   optionsData: MenuOptionType[]
   handleGetDefaultAudioDevice: () => void
   handleGetVCSetupStatus: () => void
@@ -25,12 +25,12 @@ type LockSelectedDeviceType = {
 }
 const SecondStep = ({
   currentDefaultAudioDevice,
-  //   currentOption,
   optionsData,
   handleGetDefaultAudioDevice,
   handleGetVCSetupStatus,
   handleCheckIfVoicemeeterIsRunning
 }: SecondStepPropsType): React.ReactElement => {
+  const { handleUpdateState } = useContext(VCStatusContext)
   const [currentOption, setCurrentOption] = useState<MenuOptionType>({
     label: 'No options',
     value: 'none',
@@ -68,39 +68,31 @@ const SecondStep = ({
           device_name: response.data.device_name,
           lock_status: true
         })
+        handleUpdateState('lock_status', true)
         handleGetDefaultAudioDevice()
       } else {
-        setVcSetupMessageData({
-          device_name: 'none',
-          message: response.error
-        })
-        localStorage.setItem('User_Output_device', JSON.stringify(errorDeviceObj))
-        setLockSelectedOutputDevice(errorDeviceObj)
+        throw Error(response.error)
       }
     } catch (error) {
-      console.log(error)
       setVcSetupMessageData({
         device_name: 'none',
         message: error as string
       })
       localStorage.setItem('User_Output_device', JSON.stringify(errorDeviceObj))
+      handleUpdateState('lock_status', false)
       setLockSelectedOutputDevice(errorDeviceObj)
     } finally {
       handleGetVCSetupStatus()
     }
   }
-  console.log('awewe', optionsData)
   useEffect(() => {
     const getDevice: string | null = localStorage.getItem('User_Output_device')
     const checkUserDevice: LockSelectedDeviceType | null =
       getDevice !== null ? JSON.parse(getDevice) : null
     if (optionsData.length) {
-      console.log('asara', checkUserDevice)
       if (checkUserDevice !== null) {
         const findObj = optionsData.find((item) => item.value === checkUserDevice.device_name)
-        console.log('asara22', findObj)
         if (findObj) {
-          console.log('asara23332')
           setCurrentOption(() => {
             const optionObj = {
               label: findObj.label,
@@ -110,33 +102,43 @@ const SecondStep = ({
             handleSetupVCApp(optionObj)
             return optionObj
           })
-          // setLockSelectedOutputDevice({
-          //   device_name: findObj.value,
-          //   lock_status: true
-          // })
         }
       }
     }
   }, [optionsData])
   return (
-    <div className="bg-[#002634] w-full flex flex-col py-4 px-6 md:px-10 gap-4">
+    <div className="bg-secondary-background w-full flex flex-col py-4 px-6 md:px-8 gap-4">
       {lockSelectedOutputDevice.lock_status ? (
         <section className="flex flex-col text-start items-start justify-start w-full h-fit gap-4">
           <div className="flex flex-row flex-wrap gap-4 text-start items-center justify-between w-full h-fit">
-            <strong>Capturing audio from device:</strong>
-            <dl className="flex flex-row flex-grow  text-start items-center justify-between bg-[#002634] rounded-md gap-4 font-bold h-[3rem] w-fit min-w-[17rem]">
-              <dt className="pl-4 ">
+            <strong className="text-xl">Capturing audio from device:</strong>
+            <dl className="flex flex-row flex-grow  text-start items-center justify-between bg-primary-button rounded-md gap-4 font-bold h-[3rem] w-fit min-w-[17rem]">
+              <dt className="pl-4 flex flex-row justify-between flex-grow gap-4 text-start items-center  truncate text-lg">
                 <span className="">
                   {lockSelectedOutputDevice.device_name
                     ? lockSelectedOutputDevice.device_name
                     : 'none'}
                 </span>
+                <button
+                  type="button"
+                  title="Update status"
+                  className="flex flex-row text-start items-center justify-start border-2 border-success text-success gap-4 w-fit h-fit p-2  rounded-full bg-secondary-background hover:bg-secondary-background-hover cursor-pointer"
+                  onClick={() => {
+                    setLockSelectedOutputDevice({
+                      device_name: lockSelectedOutputDevice.device_name,
+                      lock_status: false
+                    })
+                    handleUpdateState('lock_status', false)
+                  }}
+                >
+                  <FaRegEdit className="w-3 h-3" />
+                </button>
               </dt>
               <dd
                 className={`border-2  px-4 h-full flex flex-col rounded-md  text-start items-center justify-center ${
                   lockSelectedOutputDevice.device_name.length
-                    ? 'text-green-400 border-green-400'
-                    : 'text-red-400 border-red-400'
+                    ? 'text-success border-success bg-success/15'
+                    : 'text-danger border-danger bg-danger/15'
                 }`}
               >
                 {lockSelectedOutputDevice.device_name.length ? (
@@ -152,19 +154,30 @@ const SecondStep = ({
             </dl>
           </div>
           <div className="flex flex-row flex-wrap gap-4 text-start items-center justify-between w-full h-fit">
-            <strong>Your actual default audio device is:</strong>
-            <dl className="flex flex-row flex-grow  text-start items-center justify-between bg-[#002634] rounded-md gap-4 font-bold h-[3rem] w-fit min-w-[17rem]">
-              <dt className="pl-4 ">
+            <strong className="text-xl">Your actual default audio device is:</strong>
+            <dl className="flex flex-row flex-grow  text-start items-center justify-between bg-primary-button rounded-md gap-4 font-bold h-[3rem] w-fit min-w-[17rem]">
+              <dt className="pl-4 flex flex-row justify-between flex-grow gap-4 text-start items-center  truncate text-lg">
                 <span className="">
                   {currentDefaultAudioDevice ? currentDefaultAudioDevice.name : 'none'}
                 </span>
+                <button
+                  type="button"
+                  title="Update status"
+                  className="flex flex-row text-start items-center justify-start border-2 border-success text-success gap-4 w-fit h-fit p-2  rounded-full bg-secondary-background hover:bg-secondary-background-hover cursor-pointer"
+                  onClick={() => {
+                    handleGetDefaultAudioDevice()
+                    handleCheckIfVoicemeeterIsRunning(false)
+                  }}
+                >
+                  <GrUpdate className="w-3 h-3" />
+                </button>
               </dt>
               <dd
                 className={`border-2  px-4 h-full flex flex-col rounded-md  text-start items-center justify-center ${
                   currentDefaultAudioDevice?.name ===
                   'Voicemeeter AUX Input (VB-Audio Voicemeeter VAIO)'
-                    ? 'text-green-400 border-green-400'
-                    : 'text-red-400 border-red-400'
+                    ? 'text-success border-success bg-success/15'
+                    : 'text-danger border-danger bg-danger/15'
                 }`}
               >
                 {currentDefaultAudioDevice?.name ===
@@ -180,50 +193,32 @@ const SecondStep = ({
               </dd>
             </dl>
           </div>
-          <div className="flex flex-row gap-4 text-start items-center justify-between w-full h-fit">
-            <strong>
-              Please change it to {'"Voicemeeter AUX Input (VB-Audio Voicemeeter VAIO)"'} then click
-              to update
+
+          <div className="flex flex-row gap-4 text-center items-center justify-center w-full h-fit">
+            <strong
+              className={`text-xl ${
+                currentDefaultAudioDevice?.name !==
+                'Voicemeeter AUX Input (VB-Audio Voicemeeter VAIO)'
+                  ? 'text-danger'
+                  : 'text-success'
+              }`}
+            >
+              {currentDefaultAudioDevice?.name !==
+              'Voicemeeter AUX Input (VB-Audio Voicemeeter VAIO)'
+                ? 'Please change it to Voicemeeter "AUX Input (VB-Audio Voicemeeter VAIO)" then click to update'
+                : "Now  you're available to capture audio from speaker"}
             </strong>
-            <button
-              type="button"
-              title="Update Default audio device"
-              className="flex flex-col text-center items-center justify-start px-6 py-4 rounded-md bg-[#002634] border-2 border-green-600 text-green-600"
-              onClick={() => {
-                handleGetDefaultAudioDevice()
-                handleCheckIfVoicemeeterIsRunning(false)
-              }}
-            >
-              <GrUpdate className="w-5 h-5" />
-            </button>
-            <button
-              type="button"
-              className="border px-4 py-2 rounded-md bg-[#686565]"
-              onClick={() => {
-                setLockSelectedOutputDevice({
-                  device_name: lockSelectedOutputDevice.device_name,
-                  lock_status: false
-                })
-              }}
-            >
-              <FaRegEdit className="w-5 h-5" />
-            </button>
           </div>
         </section>
       ) : (
-        <section className="flex flex-col w-full h-fit text-start items-center justify-start border-b  border-zinc-600 gap-4">
+        <section className="flex flex-col w-full h-fit text-start items-center justify-start border-b  border-primary-background gap-4 pb-4">
           <div className="w-full">
-            <strong className="text-[1.1rem]">
-              {'Start by selecting the output device you want to capture audio from. '}
+            <strong className="text-3xl ">
+              Start by selecting the output device you want to capture audio from.
             </strong>
-            <small className="text-[0.9rem]">
-              {
-                "(The output device is the one through which you're hearing your PC's audio, such as headphones or speakers.)"
-              }
-            </small>
           </div>
           <div className="flex flex-row flex-wrap w-full h-fit gap-y-2 gap-x-6 text-start items-center justify-between pb-4">
-            <strong className="text-[0.9rem]">Output devices:</strong>
+            <strong className="text-lg">Output devices:</strong>
             <div className=" flex flex-col flex-grow md:flex-grow-0 md:w-fit">
               <SelectMenu
                 viewScroll="close"
@@ -233,12 +228,13 @@ const SecondStep = ({
                 shift={0}
                 portal={false}
                 position="anchor"
+                enableArrow
                 optionsData={optionsData ? optionsData : []}
                 currentOption={currentOption}
                 handleOptionChange={handleSelectedOptionChange}
                 disableButton={lockSelectedOutputDevice.lock_status}
                 customButtonClassName={
-                  'bg-[#414040] hover:bg-[#2c2c2c] flex flex-row text-start items-center justify-between w-full h-fit py-2 px-6 rounded-md text-[0.9rem] font-bold text-white gap-4'
+                  'bg-primary-button hover:bg-primary-button-hover flex flex-row text-start items-center justify-between w-full h-fit py-2 px-6 rounded-md text-lg font-bold text-white gap-4'
                 }
                 customButtonContent={currentOption.label}
                 customButtonTitle={'Select output device'}
@@ -246,18 +242,18 @@ const SecondStep = ({
             </div>
           </div>
           {currentOption !== null && currentOption.value !== 'none' ? (
-            <div className="flex flex-col text-start items-start justify-start w-full h-fit gap-4 pb-4 text-[0.9rem]">
+            <div className="flex flex-col text-start items-start justify-start w-full h-fit gap-4 pb-4 text-lg">
               <div className="flex flex-row w-fit text-start items-center gap-4">
                 <button
                   type="button"
-                  className="bg-[#686565] hover:bg-zinc-800 flex flex-row text-start items-center justify-start w-fit h-fit py-2 px-6 rounded-md truncate font-bold"
+                  className="bg-primary-button hover:bg-primary-button-hover flex flex-row text-start items-center justify-start w-fit h-fit py-2 px-6 rounded-md truncate font-bold text-lg"
                   onClick={() => handleSetupVCApp()}
                   disabled={lockSelectedOutputDevice.lock_status}
                 >
                   Set this devices as Output for VC
                 </button>
               </div>
-              <small>{vcSetupMessageData?.message}</small>
+              <small className="text-base">{vcSetupMessageData?.message}</small>
             </div>
           ) : (
             <></>

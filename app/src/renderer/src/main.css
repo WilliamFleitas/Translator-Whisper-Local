@@ -1,5 +1,40 @@
 @import "tailwindcss";
-@tailwind utilities;
+
+@theme {
+  /* fontsize */
+  --text-xs: 0.7rem; 
+  --text-sm: 0.75rem;
+  --text-base: 0.8rem;
+  --text-lg: 0.9rem;
+  --text-xl: 0.95rem;
+  --text-2xl: 1rem;
+  --text-3xl: 1.15rem;
+  --text-4xl: 1.25rem;
+  /* fontsize */
+
+  /* screens */
+  --breakpoint-fh: 400px;
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+  /* screens */
+
+  /* colors */
+  --color-primary-background: #333333;
+  --color-secondary-background: #002634;
+  --color-secondary-background-hover: #001820;
+  --color-danger: #940108;
+  --color-danger-hover: #660005;
+  --color-success: #048100;
+  --color-success-hover: #036600;
+  --color-primary-button: #414040;
+  --color-primary-button-hover: #2c2c2c;
+  --color-secondary-button: #1b1b1f;
+  --color-secondary-button-hover: #121214;
+  /* colors */
+}
 
 body {
   align-items: flex-start;
@@ -7,7 +42,7 @@ body {
   overflow-y: auto;
   overflow-x: hidden;
   user-select: none;
-  background-color: #333333;
+  background-color: var(--color-primary-background);
   color: #ffffff;
   width: 100%;
 }

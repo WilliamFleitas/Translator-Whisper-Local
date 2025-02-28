@@ -5,9 +5,9 @@ import {
 } from '../../../../globalTypes/globalApi'
 import { useEffect, useState } from 'react'
 import TranslatorTextarea from './assets/TranslatorTextarea'
-import TranslatorController from './assets/TranslatorController'
 import WhisperModels from './assets/WhisperModels'
 import { toast } from 'react-toastify'
+import TranslatorSettings from '../translatorSettings/TranslatorSettings'
 
 const PCAudioTranslator: React.FC = () => {
   const [transcriptionSentence, setTranscriptionSentence] = useState<string>('')
@@ -49,17 +49,21 @@ const PCAudioTranslator: React.FC = () => {
     }
   }, [])
   return (
-    <article className=" flex flex-col text-start items-start justify-start w-full h-fit py-6 gap-4">
+    <article className=" flex flex-col text-start items-start justify-start w-full h-full gap-4">
       <WhisperModels selectedModel={selectedModel} setSelectedModel={setSelectedModel} />
-      <TranslatorController
-        selectedModel={selectedModel}
-        isCapturingAudio={isCapturingAudio}
-        setIsCapturingAudio={setIsCapturingAudio}
-        setTranscriptionSentence={setTranscriptionSentence}
-      />
 
-      <div className="flex flex-col w-full h-fit text-start items-start justify-start px-4 md:px-8 gap-4">
-        <TranslatorTextarea translatorContent={transcriptionSentence} />
+      <div className="flex flex-col w-full h-full text-start items-center justify-start px-4 md:px-8 gap-4 py-6">
+        <TranslatorTextarea
+          translatorContent={transcriptionSentence}
+          selectedModel={selectedModel}
+          isCapturingAudio={isCapturingAudio}
+          setIsCapturingAudio={setIsCapturingAudio}
+          setTranscriptionSentence={setTranscriptionSentence}
+        />
+      </div>
+
+      <div className="flex flex-col w-full h-full text-start items-start justify-start ">
+        <TranslatorSettings />
       </div>
     </article>
   )

@@ -15,7 +15,8 @@ import {
   StartStreamingType,
   WhisperHelpersType,
   WhisperModelListType,
-  CheckGraphicCardType
+  CheckGraphicCardType,
+  CheckVoicemeeterIsRunningType
 } from '../preload'
 dotenv.config()
 
@@ -51,7 +52,7 @@ const venvPython = isPackaged
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 900,
-    minWidth: 350,
+    minWidth: 450,
     height: 670,
     show: false,
     autoHideMenuBar: true,
@@ -174,33 +175,39 @@ ipcMain.handle(
 
       const pythonProcess = spawn(venvPython, ['-u', scriptPath, queryType])
 
-      let outputData = ''
+      let outputData: ApiResponse<CheckVoicemeeterIsRunningType>
 
       pythonProcess.stdout.on('data', (data) => {
-        outputData += data.toString()
+        const dataToString = data.toString().trim().split('\n')
+        try {
+          const response: ApiResponse<CheckVoicemeeterIsRunningType> = JSON.parse(dataToString)
+          if (response.success) {
+            outputData = response
+          } else {
+            throw Error(response.error)
+          }
+        } catch (error) {
+          return resolve({
+            success: false,
+            error: error instanceof Error ? error.message : String(error)
+          })
+        }
       })
 
       pythonProcess.stderr.on('data', (data) => {
-        console.error(`Python script error: ${data.toString().trim()}`)
+        const message = data.toString().trim()
+        console.log('mesagetderr:', message)
+      })
+
+      pythonProcess.on('error', (error) => {
+        return resolve({ success: false, error: error.message })
       })
 
       pythonProcess.on('close', (code) => {
         if (code === 0) {
-          try {
-            const response = JSON.parse(outputData.trim())
-            resolve(response)
-          } catch (error: any) {
-            console.error(`Error parsing JSON output: ${error.message}`)
-            resolve({
-              success: false,
-              error: `Error parsing JSON output: ${error.message}`
-            })
-          }
+          resolve(outputData)
         } else {
-          resolve({
-            success: false,
-            error: `Error executing Python script. Code: ${code}`
-          })
+          resolve({ success: false, error: `Voicemeter-api ${queryType} script failed` })
         }
       })
     })

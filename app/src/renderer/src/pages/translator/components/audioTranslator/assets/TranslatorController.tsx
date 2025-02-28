@@ -1,6 +1,14 @@
-import { useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import SelectMenu, { MenuOptionType } from '../../../../../components/menu/SelectMenu'
-import { FaPlay, FaStop } from 'react-icons/fa'
+import { FaPlay, FaStop, FaMicrophone, FaLock } from 'react-icons/fa'
+import { HiSpeakerWave } from 'react-icons/hi2'
+import { GiDuration } from 'react-icons/gi'
+import {
+  TbTimeDuration60,
+  TbTimeDuration30,
+  TbTimeDuration10,
+  TbTimeDuration0
+} from 'react-icons/tb'
 
 import {
   AudioLanguageType,
@@ -9,19 +17,7 @@ import {
   WhisperModelListType
 } from '@renderer/globalTypes/globalApi'
 import { toast } from 'react-toastify'
-
-const audioDevices = [
-  {
-    label: 'Speaker',
-    value: 'speaker',
-    id: 0
-  },
-  {
-    label: 'Mic',
-    value: 'mic',
-    id: 1
-  }
-]
+import { VCStatusContext } from '@renderer/components/context/VCContext'
 
 const timeDurationList = [
   {
@@ -50,7 +46,7 @@ const timeDurationList = [
     id: 4
   }
 ]
-const languages = [
+export const languages = [
   { id: 1, value: 'en', label: 'English' },
   { id: 2, value: 'es', label: 'Spanish' },
   { id: 3, value: 'fr', label: 'French' },
@@ -84,6 +80,22 @@ const TranslatorController = ({
   setTranscriptionSentence,
   setIsCapturingAudio
 }: TranslatorControllerPropsType): React.ReactElement => {
+  const { state } = useContext(VCStatusContext)
+  const audioDevices = [
+    {
+      label: 'Speaker',
+      value: 'speaker',
+      id: 0,
+      disabled: state.default_audio_device && state.is_running && state.lock_status ? false : true,
+      disabledTitle: 'Run Voicemeeter to unlock'
+    },
+    {
+      label: 'Mic',
+      value: 'mic',
+      id: 1
+    }
+  ]
+
   const [selectedAudioDevice, setSelectedAudioDevice] = useState<MenuOptionType>(audioDevices[1])
   const [selectedTimeduration, setSelectedTimeduration] = useState<MenuOptionType>(
     timeDurationList[0]
@@ -144,14 +156,21 @@ const TranslatorController = ({
       })
     }
   }
+
+  useEffect(() => {
+    if (selectedAudioDevice.value === 'speaker') {
+      if (!state.default_audio_device || !state.is_running || !state.lock_status) {
+        handleSelectedAudioDeviceChange(audioDevices[1])
+      }
+    }
+  }, [state])
   return (
-    <nav className=" bg-[#002634] py-4 px-4 md:px-8 gap-8 flex flex-col sm:flex-row w-full justify-between items-stretch text-start relative">
-      <section className="flex flex-row flex-wrap  w-fit h-fit text-start items-center justify-between gap-4 text-[0.9rem] flex-grow">
+    <nav className="py-3 px-4 gap-8 flex flex-col sm:flex-row w-full justify-between items-stretch text-start relative bg-secondary-background">
+      <section className="flex flex-row w-full md:w-fit h-fit text-start items-center justify-between md:justify-start  gap-4 text-lg ">
         <div className="flex flex-row flex-grow lg:flex-grow-0 text-start items-center justify-between gap-4 whitespace-nowrap">
-          <strong>Capture audio from:</strong>
           <SelectMenu
             viewScroll="close"
-            placeX="right"
+            placeX="left"
             placeY="bottom"
             gap={1}
             shift={0}
@@ -163,17 +182,22 @@ const TranslatorController = ({
             handleOptionChange={handleSelectedAudioDeviceChange}
             enableArrow={true}
             customButtonClassName={
-              'bg-[#414040] hover:bg-[#2c2c2c] flex flex-row text-start items-center justify-between w-full h-fit py-2 px-4 rounded-md text-[0.9rem] font-bold text-white gap-4'
+              'bg-primary-button hover:bg-primary-button-hover flex flex-row text-start items-center justify-between w-fit h-fit py-2 px-3 rounded-full text-lg font-bold text-white gap-3'
             }
-            customButtonContent={selectedAudioDevice.label}
+            customIcon={
+              selectedAudioDevice.value === 'mic' ? (
+                <FaMicrophone className="w-5 h-5 " />
+              ) : (
+                <HiSpeakerWave className="w-5 h-5 " />
+              )
+            }
             customButtonTitle={`Capture audio from speaker or mic`}
           />
         </div>
         <div className="flex flex-row flex-grow lg:flex-grow-0 text-start items-center justify-between gap-4 whitespace-nowrap">
-          <strong>Duration Time:</strong>
           <SelectMenu
             viewScroll="initial"
-            placeX="right"
+            placeX="left"
             placeY="bottom"
             gap={1}
             shift={0}
@@ -185,17 +209,28 @@ const TranslatorController = ({
             handleOptionChange={handleCaptureTimeChange}
             enableArrow={true}
             customButtonClassName={
-              'bg-[#414040] hover:bg-[#2c2c2c] flex flex-row text-start items-center justify-between w-full h-fit py-2 px-4 rounded-md text-[0.9rem] font-bold text-white gap-4'
+              'bg-primary-button hover:bg-primary-button-hover flex flex-row text-start items-center justify-between w-fit h-fit py-2 px-3 rounded-full text-lg font-bold text-white gap-3'
             }
-            customButtonContent={selectedTimeduration.label}
+            customIcon={
+              selectedTimeduration.value === 'unlimited' ? (
+                <GiDuration className="w-5 h-5 " />
+              ) : selectedTimeduration.value === 3600 ? (
+                <TbTimeDuration60 className="w-5 h-5 " />
+              ) : selectedTimeduration.value === 1800 ? (
+                <TbTimeDuration30 className="w-5 h-5 " />
+              ) : selectedTimeduration.value === 600 ? (
+                <TbTimeDuration10 className="w-5 h-5 " />
+              ) : (
+                <TbTimeDuration0 className="w-5 h-5 " />
+              )
+            }
             customButtonTitle={`Duration Time`}
           />
         </div>
         <div className="flex flex-row flex-grow lg:flex-grow-0 text-start items-center justify-between gap-4 whitespace-nowrap">
-          <strong>Select Language:</strong>
           <SelectMenu
             viewScroll="initial"
-            placeX="right"
+            placeX="left"
             placeY="bottom"
             gap={1}
             shift={0}
@@ -207,42 +242,39 @@ const TranslatorController = ({
             handleOptionChange={handleSelectedLanguageChange}
             enableArrow={true}
             customButtonClassName={
-              'bg-[#414040] hover:bg-[#2c2c2c] flex flex-row text-start items-center justify-between w-full h-fit py-2 px-4 rounded-md text-[0.9rem] font-bold text-white gap-4'
+              'bg-primary-button hover:bg-primary-button-hover flex flex-row text-start items-center justify-between w-fit h-fit py-2 px-3 rounded-full text-lg font-bold text-white gap-3 uppercase'
             }
-            customButtonContent={selectedLanguage.label}
+            customButtonContent={selectedLanguage.value.toString()}
             customButtonTitle={`Select Language`}
           />
         </div>
-      </section>
 
-      <section className="min-h-full md:max-w-[30rem] flex-grow">
         {isCapturingAudio ? (
           <button
-            className="bg-[#414040] hover:bg-[#2c2c2c] flex flex-row text-start items-center justify-center w-full min-w-[15rem] h-full flex-grow py-2 px-6 rounded-md text-[0.9rem] font-bold"
+            className="bg-primary-button hover:bg-primary-button-hover flex flex-row text-start items-center justify-between w-fit h-fit py-2 px-4 rounded-md text-lg font-bold uppercase text-white gap-2"
             title="Stop recording"
             onClick={handleStopRecording}
             type="button"
           >
-            <span className="hidden md:flex text-[0.9rem]">{'End recording'}</span>{' '}
-            <FaStop className="w-4 h-4 text-white" />
+            <FaStop className="w-5 h-5 text-danger" />
           </button>
         ) : (
           <button
-            className="bg-[#414040] hover:bg-[#2c2c2c] flex flex-row text-center items-center justify-center w-full min-w-[15rem] h-full flex-grow py-2 px-6 rounded-md text-[0.9rem] font-bold gap-4"
+            className="bg-primary-button hover:bg-primary-button-hover flex flex-row text-start items-center justify-between w-fit h-fit py-2 px-4 rounded-md text-lg font-bold uppercase text-white gap-2"
             title={`${selectedModel === null ? 'First Select a model' : 'Start recording'}`}
             onClick={handleStartRecording}
             type="button"
             disabled={selectedModel === null ? true : false}
           >
-            <span className="hidden md:flex text-[0.9rem]">{'Start recording'}</span>{' '}
-            <FaPlay className="w-4 h-4 text-white" />
+            <FaPlay className="w-5 h-5 text-blue-400" />
           </button>
         )}
       </section>
+
       {selectedModel === null ? (
-        <div className="absolute top-0 bg-[#002634] opacity-90 w-full h-full left-0 text-center items-center justify-center">
-          <strong className="h-full text-center items-center justify-center flex">
-            First Select a model..
+        <div className="absolute top-0 bg-secondary-background/70 w-full h-full left-0 text-center items-center justify-center">
+          <strong className="h-full text-center items-center justify-center flex flex-row gap-2 text-lg">
+            <FaLock className="w-5 h-5 " /> Select a model.
           </strong>
         </div>
       ) : (

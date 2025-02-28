@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { MenuOptionType } from '../../../../components/menu/SelectMenu'
 import {
   ApiResponse,
@@ -8,8 +8,11 @@ import {
 } from '../../../../globalTypes/globalApi'
 import FirstStep from './vcSetup/FirstStep'
 import SecondStep from './vcSetup/SecondStep'
-
+import { toast } from 'react-toastify'
+import { VCStatusContext } from '../../../../components/context/VCContext'
 const TranslatorSettings: React.FC = () => {
+  const { handleUpdateState } = useContext(VCStatusContext)
+
   const [optionsData, setOptionsData] = useState<MenuOptionType[]>([])
 
   const [currentDefaultAudioDevice, setCurrentDefaultAudioDevice] =
@@ -19,9 +22,9 @@ const TranslatorSettings: React.FC = () => {
     useState<CheckVoicemeeterIsRunningType | null>(null)
 
   const [currentVCSetup, setCurrentVCSetup] = useState<VCSettingsStatusType | null>(null)
+
   const handleGetDevices = async (): Promise<void> => {
     const response = await window.api.getAudioDevices()
-
     if (response.success) {
       setOptionsData(
         response.data.map((device) => ({
@@ -42,18 +45,26 @@ const TranslatorSettings: React.FC = () => {
   }
 
   const handleGetDefaultAudioDevice = async (): Promise<void> => {
-    const response: ApiResponse<DefaultAudioDeviceType> = await window.api.getDefaultAudioDevice()
+    try {
+      const response: ApiResponse<DefaultAudioDeviceType> = await window.api.getDefaultAudioDevice()
 
-    if (response.success) {
-      setCurrentDefaultAudioDevice(response.data)
-    } else {
+      if (response.success) {
+        setCurrentDefaultAudioDevice(response.data)
+        handleUpdateState(
+          'default_audio_device',
+          response.data.name === 'Voicemeeter AUX Input (VB-Audio Voicemeeter VAIO)' ? true : false
+        )
+      } else {
+        throw Error(response.error)
+      }
+    } catch (error) {
       setCurrentDefaultAudioDevice(null)
+      handleUpdateState('default_audio_device', false)
     }
   }
 
   const handleGetVCSetupStatus = async (): Promise<void> => {
     const response: ApiResponse<VCSettingsStatusType> = await window.api.getVCSettingsStatus()
-    console.log('responseeee', response)
     if (response.success) {
       setCurrentVCSetup(response.data)
     } else {
@@ -61,16 +72,28 @@ const TranslatorSettings: React.FC = () => {
     }
   }
   const handleCheckIfVoicemeeterIsRunning = async (updateDevices?: boolean): Promise<void> => {
-    const response: ApiResponse<CheckVoicemeeterIsRunningType> =
-      await window.api.getVoicemeeterApiCalls('isRunning')
-
-    if (response.success) {
-      setVoicemeeterIsRunning(response.data)
-      if (updateDevices !== false && response.data.active) {
-        handleGetDevices()
+    try {
+      const response: ApiResponse<CheckVoicemeeterIsRunningType> =
+        await window.api.getVoicemeeterApiCalls('isRunning')
+      if (response.success) {
+        setVoicemeeterIsRunning(response.data)
+        handleUpdateState(
+          'is_running',
+          response.data.active !== undefined ? response.data.active : false
+        )
+        if (updateDevices !== false && response.data.active) {
+          handleGetDevices()
+        }
+      } else {
+        throw Error(response.error)
       }
-    } else {
-      setVoicemeeterIsRunning(null)
+    } catch (error: any) {
+      toast.update('CheckVCIsRunning', {
+        render: `${error.message}`,
+        type: 'error',
+        isLoading: false,
+        autoClose: 5000
+      })
     }
   }
 
@@ -91,13 +114,13 @@ const TranslatorSettings: React.FC = () => {
     handleCheckIfVoicemeeterIsRunning()
   }, [])
   return (
-    <article className="flex flex-col text-start items-start justify-start w-full h-fit py-6 gap-4">
-      <div className="flex flex-col w-full h-fit text-start items-start justify-start px-6 md:px-10 border-b-2 pb-4 border-gray-700">
-        <strong className="text-[1.6rem]">
-          First we need to setup the Voicemeeter Banana Configuration.
+    <article className="flex flex-col text-start items-start justify-start w-full h-fit mt-auto py-6 gap-4 bg-secondary-background ">
+      <div className="flex flex-col w-full h-fit text-start items-start justify-start px-4 md:px-8 pb-2 ">
+        <strong className="text-3xl ">
+          Set up Voicemeeter Banana if you want to capture speaker audio.
         </strong>
       </div>
-      <div className="flex flex-col w-full h-fit text-start items-start justify-start border-b-2 pb-4 border-gray-700">
+      <div className="flex flex-col w-full h-fit text-start items-start justify-start pb-4">
         <FirstStep
           voicemeeterIsRunning={voicemeeterIsRunning}
           handleCheckIfVoicemeeterIsRunning={handleCheckIfVoicemeeterIsRunning}
