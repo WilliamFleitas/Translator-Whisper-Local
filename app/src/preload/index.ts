@@ -11,8 +11,8 @@ interface DefaultAudioDeviceType {
   id: string
 }
 
-interface CheckVoicemeeterIsRunningType {
-  active: boolean
+export interface CheckVoicemeeterIsRunningType {
+  active?: boolean
   message: string
 }
 
@@ -128,6 +128,11 @@ export interface Api {
     event: string,
     listener: (event: Electron.IpcRendererEvent, data: any) => void
   ) => void
+  windowControls: {
+    minimize: () => void
+    maximize: () => void
+    close: () => void
+  }
 }
 
 const api: Api = {
@@ -171,6 +176,11 @@ const api: Api = {
   },
   removeListener: (event, listener) => {
     ipcRenderer.removeListener(event, listener)
+  },
+  windowControls: {
+    minimize: () => ipcRenderer.send('window-minimize'),
+    maximize: () => ipcRenderer.send('window-maximize'),
+    close: () => ipcRenderer.send('window-close')
   }
 }
 

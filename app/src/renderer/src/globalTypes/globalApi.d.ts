@@ -6,7 +6,7 @@ export interface DefaultAudioDeviceType {
 }
 
 export interface CheckVoicemeeterIsRunningType {
-  active: boolean
+  active?: boolean
   message: string
 }
 
@@ -117,12 +117,17 @@ export interface Api {
   getDefaultAudioDevice: () => Promise<ApiResponse<DefaultAudioDeviceType>>
   getVoicemeeterApiCalls: (
     queryType: 'isRunning' | 'open' | 'close'
-  ) => Promise<ApiResponse<CheckVoicemeeterIsRunningType | any>>
+  ) => Promise<ApiResponse<CheckVoicemeeterIsRunningType>>
   getVCSettingsStatus: () => Promise<ApiResponse<VCSettingsStatusType>>
   setVCSetup: (device_name: string) => Promise<ApiResponse<SetVCSetupType>>
 
   on: (event: string, listener: (event: IpcRendererEvent, data: any) => void) => void
   removeListener: (event: string, listener: (event: IpcRendererEvent, data: any) => void) => void
+  windowControls: {
+    minimize: () => void
+    maximize: () => void
+    close: () => void
+  }
 }
 
 declare global {

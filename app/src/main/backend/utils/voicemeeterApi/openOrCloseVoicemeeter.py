@@ -21,7 +21,7 @@ def open_or_close_voicemeeter(action):
         if action == "open":
             try:
                 vm.run_voicemeeter(kind_id)
-                return {"success": True, "message": "Voicemeeter Banana has started successfully."}
+                return {"success": True, "data": {"message": "Voicemeeter Banana has started successfully."}}
             except voicemeeterlib.error.CAPIError as e:
                 if e.args[1] == -1:
                     return {"success": False, "error": "Voicemeeter Banana is not installed."}
@@ -35,7 +35,7 @@ def open_or_close_voicemeeter(action):
                         vm.login()
                         vm.command.shutdown()
                         vm.logout()
-                return {"success": True, "message": "Voicemeeter Banana has been closed successfully."}
+                return {"success": True, "data": {"message": "Voicemeeter Banana has been closed successfully."}}
             except voicemeeterlib.error.CAPIError as e:
                 if e.args[1] == -1:
                     return {"success": False, "error": "Voicemeeter Banana is not installed."}

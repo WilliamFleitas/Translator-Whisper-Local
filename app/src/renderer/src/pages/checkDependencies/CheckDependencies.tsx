@@ -63,7 +63,7 @@ const CheckDependencies = (): React.ReactElement => {
   return (
     <div className="flex flex-col text-center items-center justify-center w-full min-h-screen  text-white md:p-10">
       {loading ? (
-        <div className="w-full md:w-fit  h-full min-h-screen md:h-fit md:min-h-[13rem] text-start items-center justify-center bg-gray-900 p-10 md:rounded-md flex flex-col">
+        <div className="w-full md:w-fit  h-full min-h-screen md:h-fit md:min-h-[13rem] text-start items-center justify-center bg-secondary-background p-10 md:rounded-md flex flex-col">
           <div className="flex flex-col w-fit h-fit gap-4 text-start items-start justify-start">
             <strong className="text-[1.2rem]">
               Checking dependencies, This may take a few seconds...
@@ -98,16 +98,16 @@ const CheckDependencies = (): React.ReactElement => {
           </div>
         </div>
       ) : checkDependenciesError ? (
-        <div className="w-full md:w-fit  h-full min-h-screen md:h-fit md:min-h-[13rem] text-start items-center justify-center bg-gray-900 p-10 md:rounded-md flex flex-col">
+        <div className="w-full md:w-fit  h-full min-h-screen md:h-fit md:min-h-[13rem] text-start items-center justify-center bg-secondary-background p-10 md:rounded-md flex flex-col">
           <div className="flex flex-col w-fit h-fit gap-4 text-start items-start justify-start ">
             <strong className="text-[1.2rem]">There was an error checking dependencies..</strong>
             <small className="text-[0.9rem] flex flex-row gap-2 text-start items-center justify-start">
-              <span className="text-red-600 text-[0.9rem] font-bold">Error:</span>
+              <span className="text-danger text-[0.9rem] font-bold">Error:</span>
               {checkDependenciesError}
             </small>
             <div className="flex flex-col w-full h-fit text-start items-center justify-center gap-4">
               <button
-                className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded font-bold"
+                className="mt-4 px-4 py-2 bg-danger hover:bg-danger-hover text-white rounded font-bold"
                 onClick={() => window.location.reload()}
               >
                 Retry

@@ -1,4 +1,4 @@
-appId: com.electron.app
+appId: com.freeLangElectron.app
 productName: FreeLangAPP
 directories:
   buildResources: build
@@ -9,6 +9,8 @@ files:
   - '!{.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+  - '!**/{.git,.github,.vscode,node_modules,test}/**'
+  - '!**/*.{log,md,iml}'
 asarUnpack:
   - resources/**
 win:
@@ -33,11 +35,8 @@ linux:
     - AppImage
     - snap
     - deb
-  maintainer: electronjs.org
+  maintainer: https://github.com/WilliamFleitas
   category: Utility
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
-publish:
-  provider: generic
-  url: https://example.com/auto-updates
