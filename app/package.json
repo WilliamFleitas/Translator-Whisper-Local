@@ -1,10 +1,10 @@
 {
-  "name": "app",
+  "name": "freelang",
   "version": "1.0.0",
-  "description": "An Electron application with React and TypeScript",
+  "description": "Translator App, using Openai Whisper and Voicemeeter to capture audio from Output Audio",
   "main": "./out/main/index.js",
-  "author": "example.com",
-  "homepage": "https://electron-vite.org",
+  "author": "https://github.com/WilliamFleitas",
+  "homepage": "https://github.com/WilliamFleitas/FreeLang",
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",
@@ -53,7 +53,7 @@
     "@electron-toolkit/eslint-config-ts": "^2.0.0",
     "@electron-toolkit/tsconfig": "^1.0.1",
     "@szhsin/react-menu": "^4.2.4",
-    "@tailwindcss/postcss": "^4.0.4",
+    "@tailwindcss/postcss": "^4.0.9",
     "@types/node": "^20.14.8",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
