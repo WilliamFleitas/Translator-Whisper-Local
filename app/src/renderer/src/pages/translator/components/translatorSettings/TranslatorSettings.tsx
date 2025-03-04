@@ -114,7 +114,7 @@ const TranslatorSettings: React.FC = () => {
     handleCheckIfVoicemeeterIsRunning()
   }, [])
   return (
-    <article className="flex flex-col text-start items-start justify-start w-full h-fit mt-auto py-6 gap-4 bg-secondary-background ">
+    <article className="flex flex-col text-start items-start justify-start w-full h-fit mt-auto py-6 gap-4 bg-secondary-background pb-10">
       <div className="flex flex-col w-full h-fit text-start items-start justify-start px-4 md:px-8 pb-2 ">
         <strong className="text-3xl ">
           Set up Voicemeeter Banana if you want to capture speaker audio.

@@ -123,6 +123,11 @@ export interface Api {
 
   on: (event: string, listener: (event: IpcRendererEvent, data: any) => void) => void
   removeListener: (event: string, listener: (event: IpcRendererEvent, data: any) => void) => void
+  windowControls: {
+    minimize: () => void
+    maximize: () => void
+    close: () => void
+  }
 }
 
 declare global {

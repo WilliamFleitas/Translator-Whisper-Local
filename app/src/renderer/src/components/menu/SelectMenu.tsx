@@ -6,10 +6,6 @@ import { IoIosArrowDown } from 'react-icons/io'
 import { useState } from 'react'
 import { FaLock } from 'react-icons/fa'
 
-// const DOPDOWN_Y_PLACE_OPTIONS = {
-//   top: "top",
-//   bottom: "bottom",
-// };
 const DOPDOWN_X_PLACE_OPTIONS = {
   left: 'left',
   right: 'right'

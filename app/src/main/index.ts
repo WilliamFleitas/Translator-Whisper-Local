@@ -18,6 +18,7 @@ import {
   CheckGraphicCardType,
   CheckVoicemeeterIsRunningType
 } from '../preload'
+
 dotenv.config()
 
 let tray: Tray | null = null
@@ -56,7 +57,8 @@ function createWindow(): void {
     height: 670,
     show: false,
     autoHideMenuBar: true,
-    ...(process.platform === 'linux' ? { icon } : {}),
+    frame: false,
+    icon: join(__dirname, '../../resources/icon.png'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
@@ -118,7 +120,7 @@ function createOverlay(): void {
       skipTaskbar: true,
       show: false,
       webPreferences: {
-        nodeIntegration: true,
+        nodeIntegration: false,
         preload: join(__dirname, '../preload/index.js')
       }
     })
@@ -244,7 +246,6 @@ ipcMain.handle('get_VC_settings_status', async () => {
           const response = JSON.parse(outputData.trim())
           resolve(response)
         } catch (error: any) {
-          console.error(`Error parsing JSON output: ${error.message}`)
           resolve({
             success: false,
             error: `Error parsing JSON output: ${error.message}`
@@ -290,7 +291,6 @@ ipcMain.handle('set_VC_setup', async (_event, device_name: string) => {
           const response = JSON.parse(outputData.trim())
           resolve(response)
         } catch (error: any) {
-          console.error(`Error parsing JSON output: ${error.message}`)
           resolve({
             success: false,
             error: `Error parsing JSON output: ${error.message}`
@@ -336,7 +336,6 @@ ipcMain.handle('find_default_audio_device', async () => {
           const response = JSON.parse(outputData.trim())
           resolve(response)
         } catch (error: any) {
-          console.error(`Error parsing JSON output: ${error.message}`)
           resolve({
             success: false,
             error: `Error parsing JSON output: ${error.message}`
@@ -380,7 +379,6 @@ ipcMain.handle('find-audio-devices', async () => {
           const response = JSON.parse(outputData.trim())
           resolve(response)
         } catch (error: any) {
-          console.error(`Error parsing JSON output: ${error.message}`)
           resolve({
             success: false,
             error: `Error parsing JSON output: ${error.message}`
@@ -493,11 +491,9 @@ ipcMain.handle('stop-streaming', async () => {
         return { success: false, data: { status: 'The process was already stopped.' } }
       }
     } catch (error) {
-      console.error('Error stopping the Python process:', error)
       return { success: false, data: { status: 'Error stopping the process' } }
     }
   } else {
-    console.log('No process is running.')
     return { success: false, data: { status: 'No process is running.' } }
   }
 })
@@ -651,7 +647,21 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
+ipcMain.on('window-minimize', () => {
+  mainWindow?.minimize()
+})
 
+ipcMain.on('window-maximize', () => {
+  if (mainWindow?.isMaximized()) {
+    mainWindow.unmaximize()
+  } else {
+    mainWindow?.maximize()
+  }
+})
+
+ipcMain.on('window-close', () => {
+  mainWindow?.close()
+})
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
