@@ -88,9 +88,7 @@ const TranslatorSettings: React.FC = () => {
         throw Error(response.error)
       }
     } catch (error: any) {
-      toast.update('CheckVCIsRunning', {
-        render: `${error.message}`,
-        type: 'error',
+      toast.error(`${error.message}`, {
         isLoading: false,
         autoClose: 5000
       })
@@ -103,8 +101,11 @@ const TranslatorSettings: React.FC = () => {
       if (response.success) {
         handleGetDevices()
       }
-    } catch (error) {
-      console.error('Error handleOpenOrCloseVCB', error)
+    } catch (error: any) {
+      toast.error(`${error.message}`, {
+        isLoading: false,
+        autoClose: 5000
+      })
     } finally {
       handleCheckIfVoicemeeterIsRunning()
     }
