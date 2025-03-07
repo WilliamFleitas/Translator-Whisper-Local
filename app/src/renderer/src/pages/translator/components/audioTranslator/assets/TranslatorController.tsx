@@ -72,13 +72,17 @@ interface TranslatorControllerPropsType {
   isCapturingAudio: boolean
   selectedModel: AvailableModelsType | null
   setTranscriptionSentence: React.Dispatch<React.SetStateAction<string>>
+  setTranslationSentence: React.Dispatch<React.SetStateAction<string>>
   setIsCapturingAudio: React.Dispatch<React.SetStateAction<boolean>>
+  setTranslationError: React.Dispatch<React.SetStateAction<string | null>>
 }
 const TranslatorController = ({
   isCapturingAudio,
   selectedModel,
   setTranscriptionSentence,
-  setIsCapturingAudio
+  setTranslationSentence,
+  setIsCapturingAudio,
+  setTranslationError
 }: TranslatorControllerPropsType): React.ReactElement => {
   const { state } = useContext(VCStatusContext)
   const audioDevices = [
@@ -115,6 +119,8 @@ const TranslatorController = ({
     try {
       const processDevice = localStorage.getItem('process_device')
       setTranscriptionSentence('')
+      setTranslationSentence('')
+      setTranslationError(null)
       setIsCapturingAudio(true)
       const response = await window.api.startStreaming(
         selectedAudioDevice.value as 'mic' | 'speaker',
@@ -134,9 +140,7 @@ const TranslatorController = ({
       }
     } catch (err: any) {
       setIsCapturingAudio(false)
-      toast.update(0, {
-        render: `${err.message}`,
-        type: 'error',
+      toast.error(`handleStartRecording ${err.message}`, {
         isLoading: false,
         autoClose: 5000
       })
@@ -148,9 +152,7 @@ const TranslatorController = ({
       await window.api.stopStreaming()
       setIsCapturingAudio(false)
     } catch (error: any) {
-      toast.update(1, {
-        render: `${error.message}`,
-        type: 'error',
+      toast.error(`handleStopRecording ${error.message}`, {
         isLoading: false,
         autoClose: 5000
       })

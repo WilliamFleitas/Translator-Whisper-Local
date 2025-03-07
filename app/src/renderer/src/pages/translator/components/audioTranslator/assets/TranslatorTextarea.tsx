@@ -30,18 +30,26 @@ const CustomTextarea = ({
 }
 
 interface TranslatorTextareaPropsType {
-  translatorContent: string
+  transcriptionContent: string
+  translationContent: string
+  translationError: string | null
   isCapturingAudio: boolean
   selectedModel: AvailableModelsType | null
   setTranscriptionSentence: React.Dispatch<React.SetStateAction<string>>
+  setTranslationSentence: React.Dispatch<React.SetStateAction<string>>
   setIsCapturingAudio: React.Dispatch<React.SetStateAction<boolean>>
+  setTranslationError: React.Dispatch<React.SetStateAction<string | null>>
 }
 const TranslatorTextarea = ({
-  translatorContent,
+  transcriptionContent,
+  translationContent,
+  translationError,
   isCapturingAudio,
   selectedModel,
   setIsCapturingAudio,
-  setTranscriptionSentence
+  setTranscriptionSentence,
+  setTranslationSentence,
+  setTranslationError
 }: TranslatorTextareaPropsType): React.ReactElement => {
   const [text1, setText1] = useState('')
   const [text2, setText2] = useState('')
@@ -60,11 +68,23 @@ const TranslatorTextarea = ({
   }
 
   useEffect(() => {
-    if (translatorContent.length) {
-      setText1(translatorContent)
-      setText2(translatorContent)
+    if (transcriptionContent.length) {
+      setText1(transcriptionContent)
     }
-  }, [translatorContent])
+
+    return (): void => {
+      setText1('')
+    }
+  }, [transcriptionContent])
+  useEffect(() => {
+    if (translationContent.length) {
+      setText2(translationContent)
+    }
+
+    return (): void => {
+      setText2('')
+    }
+  }, [translationContent])
   useEffect(() => {
     if (textarea1Ref.current && textarea2Ref.current) {
       if (isCapturingAudio) {
@@ -78,7 +98,7 @@ const TranslatorTextarea = ({
         textarea2Ref.current.scrollTop = textarea1Ref.current.scrollHeight
       }
     }
-  }, [text1])
+  }, [text1, text2])
   return (
     <div className="flex flex-row flex-wrap lg:flex-nowrap gap-4 min-h-[10rem]  w-full h-fit">
       <div className="flex flex-col rounded-md w-full resize-none shrink  overflow-x-hidden bg-primary-button text-2xl isolate border-secondary-background border">
@@ -95,17 +115,28 @@ const TranslatorTextarea = ({
             isCapturingAudio={isCapturingAudio}
             setIsCapturingAudio={setIsCapturingAudio}
             setTranscriptionSentence={setTranscriptionSentence}
+            setTranslationSentence={setTranslationSentence}
+            setTranslationError={setTranslationError}
           />
         </div>
       </div>
-      <div className="flex flex-col rounded-md w-full resize-none shrink overflow-x-hidden bg-primary-button  text-2xl isolate border-secondary-background border">
-        <CustomTextarea
-          refValue={textarea2Ref}
-          content={text2}
-          handleChange={handleTextareaChange}
-          placeholder="Transcription.."
-          disabled={true}
-        />
+      <div className="flex flex-col rounded-md w-full resize-none shrink overflow-x-hidden bg-primary-button  text-2xl isolate border-secondary-background border ">
+        <div className="flex w-full h-full shrink relative ">
+          <CustomTextarea
+            refValue={textarea2Ref}
+            content={text2}
+            handleChange={handleTextareaChange}
+            placeholder="Transcription.."
+            disabled={true}
+          />
+          {translationError?.length ? (
+            <strong className="bg-secondary-background/80 absolute top-0 left-0 w-full h-full flex text-center items-center justify-center grow gap-2 text-3xl border border-danger rounded-t-md">
+              <span className="text-danger text-3xl">Error: </span> {translationError}
+            </strong>
+          ) : (
+            <></>
+          )}
+        </div>
         <div className="mt-auto">
           <nav className="py-3 px-4 gap-8 flex flex-col sm:flex-row w-full justify-between items-stretch text-start relative bg-secondary-background">
             <section className="flex flex-row w-full md:w-fit h-fit text-start items-center justify-between md:justify-start  gap-4 text-lg ">

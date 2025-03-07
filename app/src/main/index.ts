@@ -18,6 +18,7 @@ import {
   CheckGraphicCardType,
   CheckVoicemeeterIsRunningType
 } from '../preload'
+import textTranslator from './backend/utils/translator/textTranslator'
 
 dotenv.config()
 
@@ -429,9 +430,10 @@ ipcMain.handle(
         audio_language
       ])
       let outputData: ApiResponse<StartStreamingType> | null = null
+      let translationError: boolean = false
 
       if (startStreamingProcess && startStreamingProcess.stdout && startStreamingProcess.stderr) {
-        startStreamingProcess.stdout.on('data', (data) => {
+        startStreamingProcess.stdout.on('data', async (data) => {
           const receivedData = data.toString().trim()
           try {
             const response = JSON.parse(receivedData)
@@ -439,6 +441,19 @@ ipcMain.handle(
               if (response.data.status !== undefined) {
                 if (response.data.status === 0) {
                   event.sender.send('streaming-data', response)
+                  if (response.data.transcription.length && !translationError) {
+                    try {
+                      const translatedText = await textTranslator(
+                        response.data.transcription,
+                        audio_language,
+                        'es'
+                      )
+                      event.sender.send('translation-data', translatedText)
+                    } catch (error: any) {
+                      translationError = true
+                      event.sender.send('translation-error-data', error.message, translationError)
+                    }
+                  }
                 } else {
                   outputData = response
                 }
@@ -470,6 +485,11 @@ ipcMain.handle(
       startStreamingProcess.on('close', (code) => {
         if (code === 0) {
           resolve(outputData)
+        } else if (code === null) {
+          resolve({
+            success: true,
+            data: { status: 1, message: 'Audio capturing ended.' }
+          })
         } else {
           resolve({ success: false, error: 'Speech to text script failed' })
         }
