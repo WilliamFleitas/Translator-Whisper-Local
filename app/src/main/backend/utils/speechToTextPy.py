@@ -16,6 +16,8 @@ CHANNELS = 1
 FORMAT = pyaudio.paInt16
 CHUNK = 512
 
+sys.stdout = open(sys.stdout.fileno(), mode='w', encoding='utf-8')
+
 def send_error_message(error_message):
     sys.stdout.write(json.dumps({"success": False, "error": error_message}) + "\n")
     sys.stdout.flush()
@@ -69,6 +71,8 @@ def process_transcriptions(audio_queue, model, process_device, capture_done_even
             audio_buffer.clear()
 
         if capture_done_event.is_set() and audio_queue.empty():
+            sys.stdout.write(json.dumps({"success": True, "data": {"status": 1, "message": "Audio capturing ended."}}))
+            sys.stdout.flush()
             break
 
 
