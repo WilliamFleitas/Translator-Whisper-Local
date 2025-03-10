@@ -399,13 +399,14 @@ let startStreamingProcess: ChildProcess | null = null
 
 ipcMain.handle(
   'start-streaming',
-  async (
+  (
     event,
     device: DeviceType,
     durationTime: DurationTimeType,
     processDevice: ProcessDevicesType,
     modelName: WhisperModelListType,
-    audio_language: AudioLanguageType
+    audio_language: AudioLanguageType,
+    translation_language: string
   ) => {
     return new Promise((resolve) => {
       const scriptPath = getScriptPath(['speechToTextPy.py'], 'speechToTextPy.py')
@@ -439,14 +440,18 @@ ipcMain.handle(
             const response = JSON.parse(receivedData)
             if (response.success) {
               if (response.data.status !== undefined) {
-                if (response.data.status === 0) {
+                if (response.data.status === 0 || response.data.status === 2) {
                   event.sender.send('streaming-data', response)
-                  if (response.data.transcription.length && !translationError) {
+                  if (
+                    response.data.transcription !== undefined &&
+                    response.data.transcription.length &&
+                    !translationError
+                  ) {
                     try {
                       const translatedText = await textTranslator(
                         response.data.transcription,
                         audio_language,
-                        'es'
+                        translation_language
                       )
                       event.sender.send('translation-data', translatedText)
                     } catch (error: any) {

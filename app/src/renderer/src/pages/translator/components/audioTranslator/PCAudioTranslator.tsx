@@ -12,16 +12,21 @@ import TranslatorSettings from '../translatorSettings/TranslatorSettings'
 const PCAudioTranslator: React.FC = () => {
   const [transcriptionSentence, setTranscriptionSentence] = useState<string>('')
   const [translationSentence, setTranslationSentence] = useState<string>('')
+  const [transcriptionIsLoading, setTranscriptionIsLoading] = useState<boolean>(false)
   const [translationError, setTranslationError] = useState<string | null>(null)
   const [isCapturingAudio, setIsCapturingAudio] = useState<boolean>(false)
   const [selectedModel, setSelectedModel] = useState<AvailableModelsType | null>(null)
   useEffect(() => {
     const handleStreamingData = (_event: any, data: ApiResponse<StartStreamingType>): void => {
       if (data.success) {
-        if (data.data.status !== undefined && data.data.status === 0) {
-          setTranscriptionSentence((prev) => {
-            return prev + data.data.transcription
-          })
+        if (data.data.status !== undefined) {
+          if (data.data.status === 0) {
+            setTranscriptionSentence((prev) => {
+              return prev + data.data.transcription
+            })
+          } else if (data.data.status === 2) {
+            setTranscriptionIsLoading(false)
+          }
         }
       } else {
         toast.error(`handleStreamingData ${data.error}`, {
@@ -79,10 +84,12 @@ const PCAudioTranslator: React.FC = () => {
           translationError={translationError}
           selectedModel={selectedModel}
           isCapturingAudio={isCapturingAudio}
+          transcriptionIsLoading={transcriptionIsLoading}
           setIsCapturingAudio={setIsCapturingAudio}
           setTranscriptionSentence={setTranscriptionSentence}
           setTranslationSentence={setTranslationSentence}
           setTranslationError={setTranslationError}
+          setTranscriptionIsLoading={setTranscriptionIsLoading}
         />
       </div>
 

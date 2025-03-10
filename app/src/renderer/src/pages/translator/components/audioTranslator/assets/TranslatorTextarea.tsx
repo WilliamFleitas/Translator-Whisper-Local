@@ -1,7 +1,7 @@
 import { AvailableModelsType } from '@renderer/globalTypes/globalApi'
 import { useEffect, useRef, useState } from 'react'
-import TranslatorController, { languages } from './TranslatorController'
-import SelectMenu from '@renderer/components/menu/SelectMenu'
+import TranslatorController from './TranslatorController'
+import SelectMenu, { MenuOptionType } from '@renderer/components/menu/SelectMenu'
 
 interface CustomTextareaPropsType {
   refValue: React.LegacyRef<HTMLTextAreaElement> | undefined
@@ -34,25 +34,35 @@ interface TranslatorTextareaPropsType {
   translationContent: string
   translationError: string | null
   isCapturingAudio: boolean
+  transcriptionIsLoading: boolean
   selectedModel: AvailableModelsType | null
   setTranscriptionSentence: React.Dispatch<React.SetStateAction<string>>
   setTranslationSentence: React.Dispatch<React.SetStateAction<string>>
   setIsCapturingAudio: React.Dispatch<React.SetStateAction<boolean>>
   setTranslationError: React.Dispatch<React.SetStateAction<string | null>>
+  setTranscriptionIsLoading: React.Dispatch<React.SetStateAction<boolean>>
 }
 const TranslatorTextarea = ({
   transcriptionContent,
   translationContent,
   translationError,
   isCapturingAudio,
+  transcriptionIsLoading,
   selectedModel,
   setIsCapturingAudio,
   setTranscriptionSentence,
   setTranslationSentence,
+  setTranscriptionIsLoading,
   setTranslationError
 }: TranslatorTextareaPropsType): React.ReactElement => {
   const [text1, setText1] = useState('')
   const [text2, setText2] = useState('')
+  const [azureLanguages, setAzureLanguages] = useState<MenuOptionType[]>([])
+  const [selectedLanguage, setSelectedLanguage] = useState<MenuOptionType>({
+    label: 'English',
+    value: 'en',
+    id: 0
+  })
   const textarea1Ref = useRef<HTMLTextAreaElement | null>(null)
   const textarea2Ref = useRef<HTMLTextAreaElement | null>(null)
 
@@ -66,7 +76,9 @@ const TranslatorTextarea = ({
       textarea2Ref.current.style.height = `${event.target.scrollHeight}px`
     }
   }
-
+  const handleSelectedLanguageChange = (resObj: MenuOptionType): void => {
+    setSelectedLanguage(resObj)
+  }
   useEffect(() => {
     if (transcriptionContent.length) {
       setText1(transcriptionContent)
@@ -99,6 +111,40 @@ const TranslatorTextarea = ({
       }
     }
   }, [text1, text2])
+  useEffect(() => {
+    const getAzureLanguages = (): void => {
+      fetch(
+        'https://api.cognitive.microsofttranslator.com/languages?api-version=3.0&scope=translation'
+      )
+        .then((response) => response.json())
+        .then((data) => {
+          if (Object.keys(data.translation)?.length) {
+            setAzureLanguages(
+              Object.keys(data.translation).map((key, index) => ({
+                id: index,
+                value: key,
+                label: data.translation[key].name,
+                dir: data.translation[key].dir
+              }))
+            )
+          } else {
+            throw Error('There was and error getting the Languages list from Azure')
+          }
+        })
+        .catch((error) => {
+          console.error('Error fetching data:', error.message)
+          setAzureLanguages([
+            {
+              label: 'No options',
+              value: 'none',
+              id: 0
+            }
+          ])
+        })
+    }
+
+    getAzureLanguages()
+  }, [])
   return (
     <div className="flex flex-row flex-wrap lg:flex-nowrap gap-4 min-h-[10rem]  w-full h-fit">
       <div className="flex flex-col rounded-md w-full resize-none shrink  overflow-x-hidden bg-primary-button text-2xl isolate border-secondary-background border">
@@ -113,10 +159,13 @@ const TranslatorTextarea = ({
           <TranslatorController
             selectedModel={selectedModel}
             isCapturingAudio={isCapturingAudio}
+            transcriptionIsLoading={transcriptionIsLoading}
+            selectedAzureLanguage={selectedLanguage}
             setIsCapturingAudio={setIsCapturingAudio}
             setTranscriptionSentence={setTranscriptionSentence}
             setTranslationSentence={setTranslationSentence}
             setTranslationError={setTranslationError}
+            setTranscriptionIsLoading={setTranscriptionIsLoading}
           />
         </div>
       </div>
@@ -150,15 +199,15 @@ const TranslatorTextarea = ({
                   portal={true}
                   position="initial"
                   disableButton={selectedModel === null ? true : isCapturingAudio}
-                  optionsData={languages}
-                  currentOption={languages[0]}
-                  handleOptionChange={() => {}}
+                  optionsData={azureLanguages}
+                  currentOption={selectedLanguage}
+                  handleOptionChange={handleSelectedLanguageChange}
                   enableArrow={true}
                   customButtonClassName={
                     'bg-primary-button hover:bg-primary-button-hover flex flex-row text-start items-center justify-between w-fit h-fit py-2 px-3 rounded-full text-lg font-bold text-white gap-3 uppercase'
                   }
-                  customButtonContent={'ES'}
-                  customButtonTitle={`Select Language`}
+                  customButtonContent={selectedLanguage.value.toString()}
+                  customButtonTitle={`Select Translation Language`}
                 />
               </div>
             </section>

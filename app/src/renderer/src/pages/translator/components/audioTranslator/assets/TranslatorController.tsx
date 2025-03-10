@@ -18,6 +18,7 @@ import {
 } from '@renderer/globalTypes/globalApi'
 import { toast } from 'react-toastify'
 import { VCStatusContext } from '@renderer/components/context/VCContext'
+import DefaultLoading from '@renderer/components/loading/DefaultLoading'
 
 const timeDurationList = [
   {
@@ -71,18 +72,24 @@ export const languages = [
 interface TranslatorControllerPropsType {
   isCapturingAudio: boolean
   selectedModel: AvailableModelsType | null
+  transcriptionIsLoading: boolean
+  selectedAzureLanguage: MenuOptionType
   setTranscriptionSentence: React.Dispatch<React.SetStateAction<string>>
   setTranslationSentence: React.Dispatch<React.SetStateAction<string>>
   setIsCapturingAudio: React.Dispatch<React.SetStateAction<boolean>>
   setTranslationError: React.Dispatch<React.SetStateAction<string | null>>
+  setTranscriptionIsLoading: React.Dispatch<React.SetStateAction<boolean>>
 }
 const TranslatorController = ({
   isCapturingAudio,
+  selectedAzureLanguage,
   selectedModel,
+  transcriptionIsLoading,
   setTranscriptionSentence,
   setTranslationSentence,
   setIsCapturingAudio,
-  setTranslationError
+  setTranslationError,
+  setTranscriptionIsLoading
 }: TranslatorControllerPropsType): React.ReactElement => {
   const { state } = useContext(VCStatusContext)
   const audioDevices = [
@@ -118,6 +125,7 @@ const TranslatorController = ({
   const handleStartRecording = async (): Promise<void> => {
     try {
       const processDevice = localStorage.getItem('process_device')
+      setTranscriptionIsLoading(true)
       setTranscriptionSentence('')
       setTranslationSentence('')
       setTranslationError(null)
@@ -129,7 +137,8 @@ const TranslatorController = ({
         selectedModel && selectedModel.model
           ? (selectedModel.model as WhisperModelListType)
           : 'tiny',
-        selectedLanguage.value as AudioLanguageType
+        selectedLanguage.value as AudioLanguageType,
+        selectedAzureLanguage.value.toString()
       )
       if (response.success) {
         if (response.data.status !== undefined && response.data.status === 1) {
@@ -251,7 +260,16 @@ const TranslatorController = ({
           />
         </div>
 
-        {isCapturingAudio ? (
+        {transcriptionIsLoading ? (
+          <button
+            className="bg-primary-button  flex flex-row text-start items-center justify-between w-fit h-full py-2 px-4 rounded-md text-lg font-bold uppercase text-white gap-2"
+            title={`Loading..`}
+            type="button"
+            disabled={true}
+          >
+            <DefaultLoading size={1.25} color={'#fff'} />
+          </button>
+        ) : isCapturingAudio ? (
           <button
             className="bg-primary-button hover:bg-primary-button-hover flex flex-row text-start items-center justify-between w-fit h-fit py-2 px-4 rounded-md text-lg font-bold uppercase text-white gap-2"
             title="Stop recording"

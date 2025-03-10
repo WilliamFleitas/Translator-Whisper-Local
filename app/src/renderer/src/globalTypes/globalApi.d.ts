@@ -109,7 +109,8 @@ export interface Api {
     durationTime: DurationTimeType,
     processDevice: ProcessDevicesType,
     modelName: WhisperModelListType,
-    audio_language: AudioLanguageType
+    audio_language: AudioLanguageType,
+    translation_language: string
   ) => Promise<ApiResponse<StartStreamingType>>
   stopStreaming: () => Promise<ApiResponse<{ status: string }>>
   getAudioDevices: () => Promise<ApiResponse<DefaultAudioDeviceType[]>>

@@ -28,7 +28,7 @@ interface SetVCSetupType {
 }
 
 export interface StartStreamingType {
-  status: number
+  status: 0 | 1 | 2
   transcription?: string
   message?: string
 }
@@ -112,7 +112,8 @@ export interface Api {
     durationTime: DurationTimeType,
     processDevice: ProcessDevicesType,
     modelName: WhisperModelListType,
-    audio_language: AudioLanguageType
+    audio_language: AudioLanguageType,
+    translation_language: string
   ) => Promise<ApiResponse<StartStreamingType>>
   stopStreaming: () => Promise<ApiResponse<{ status: string }>>
   getAudioDevices: () => Promise<ApiResponse<AudioDeviceDataType[]>>
@@ -142,14 +143,22 @@ const api: Api = {
   whisperHelpers: async (helperName, model_name) => {
     return await ipcRenderer.invoke('whisper-helpers', helperName, model_name)
   },
-  startStreaming: async (device, durationTime, processDevice, model_name, audio_language) => {
+  startStreaming: async (
+    device,
+    durationTime,
+    processDevice,
+    model_name,
+    audio_language,
+    translation_language
+  ) => {
     return await ipcRenderer.invoke(
       'start-streaming',
       device,
       durationTime,
       processDevice,
       model_name,
-      audio_language
+      audio_language,
+      translation_language
     )
   },
   stopStreaming: async () => {
