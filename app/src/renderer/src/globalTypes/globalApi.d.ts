@@ -110,7 +110,9 @@ export interface Api {
     processDevice: ProcessDevicesType,
     modelName: WhisperModelListType,
     audio_language: AudioLanguageType,
-    translation_language: string
+    translation_language: string,
+    subsKey: string | undefined,
+    region: string | undefined
   ) => Promise<ApiResponse<StartStreamingType>>
   stopStreaming: () => Promise<ApiResponse<{ status: string }>>
   getAudioDevices: () => Promise<ApiResponse<DefaultAudioDeviceType[]>>
@@ -121,6 +123,16 @@ export interface Api {
   ) => Promise<ApiResponse<CheckVoicemeeterIsRunningType>>
   getVCSettingsStatus: () => Promise<ApiResponse<VCSettingsStatusType>>
   setVCSetup: (device_name: string) => Promise<ApiResponse<SetVCSetupType>>
+  getTranslation: (
+    transcription: string,
+    audio_language: AudioLanguageType,
+    translation_language: string,
+    subsKey: string | undefined,
+    region: string | undefined
+  ) => Promise<ApiResponse<{ translation: string }>>
+
+  handleTranslationOverlay: (enableOverlay: boolean) => void
+  setClickableOverlay: (enableOverlay: boolean) => void
 
   on: (event: string, listener: (event: IpcRendererEvent, data: any) => void) => void
   removeListener: (event: string, listener: (event: IpcRendererEvent, data: any) => void) => void

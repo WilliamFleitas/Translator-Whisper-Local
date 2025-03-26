@@ -19,6 +19,7 @@ import {
 import { toast } from 'react-toastify'
 import { VCStatusContext } from '@renderer/components/context/VCContext'
 import DefaultLoading from '@renderer/components/loading/DefaultLoading'
+import { languages } from './TranslatorTextarea'
 
 const timeDurationList = [
   {
@@ -47,49 +48,34 @@ const timeDurationList = [
     id: 4
   }
 ]
-export const languages = [
-  { id: 1, value: 'en', label: 'English' },
-  { id: 2, value: 'es', label: 'Spanish' },
-  { id: 3, value: 'fr', label: 'French' },
-  { id: 4, value: 'de', label: 'German' },
-  { id: 5, value: 'it', label: 'Italian' },
-  { id: 6, value: 'pt', label: 'Portuguese' },
-  { id: 7, value: 'ru', label: 'Russian' },
-  { id: 8, value: 'ar', label: 'Arabic' },
-  { id: 9, value: 'zh', label: 'Chinese' },
-  { id: 10, value: 'ja', label: 'Japanese' },
-  { id: 11, value: 'ko', label: 'Korean' },
-  { id: 12, value: 'hi', label: 'Hindi' },
-  { id: 13, value: 'tr', label: 'Turkish' },
-  { id: 14, value: 'pl', label: 'Polish' },
-  { id: 15, value: 'nl', label: 'Dutch' },
-  { id: 16, value: 'sv', label: 'Swedish' },
-  { id: 17, value: 'da', label: 'Danish' },
-  { id: 18, value: 'no', label: 'Norwegian' },
-  { id: 19, value: 'fi', label: 'Finnish' },
-  { id: 20, value: 'cs', label: 'Czech' }
-]
+
 interface TranslatorControllerPropsType {
   isCapturingAudio: boolean
   selectedModel: AvailableModelsType | null
   transcriptionIsLoading: boolean
-  selectedAzureLanguage: MenuOptionType
+  selectedTranslationLanguage: MenuOptionType
+  selectedTranscriptionLanguage: MenuOptionType
   setTranscriptionSentence: React.Dispatch<React.SetStateAction<string>>
   setTranslationSentence: React.Dispatch<React.SetStateAction<string>>
   setIsCapturingAudio: React.Dispatch<React.SetStateAction<boolean>>
   setTranslationError: React.Dispatch<React.SetStateAction<string | null>>
   setTranscriptionIsLoading: React.Dispatch<React.SetStateAction<boolean>>
+  setTranscriptionError: React.Dispatch<React.SetStateAction<string | null>>
+  handleSelectedTranscriptionLanguageChange: (resObj: MenuOptionType) => void
 }
 const TranslatorController = ({
   isCapturingAudio,
-  selectedAzureLanguage,
+  selectedTranslationLanguage,
   selectedModel,
   transcriptionIsLoading,
+  selectedTranscriptionLanguage,
   setTranscriptionSentence,
   setTranslationSentence,
   setIsCapturingAudio,
   setTranslationError,
-  setTranscriptionIsLoading
+  setTranscriptionError,
+  setTranscriptionIsLoading,
+  handleSelectedTranscriptionLanguageChange
 }: TranslatorControllerPropsType): React.ReactElement => {
   const { state } = useContext(VCStatusContext)
   const audioDevices = [
@@ -111,7 +97,6 @@ const TranslatorController = ({
   const [selectedTimeduration, setSelectedTimeduration] = useState<MenuOptionType>(
     timeDurationList[0]
   )
-  const [selectedLanguage, setSelectedLanguage] = useState<MenuOptionType>(languages[0])
 
   const handleSelectedAudioDeviceChange = (resObj: MenuOptionType): void => {
     setSelectedAudioDevice(resObj)
@@ -119,16 +104,18 @@ const TranslatorController = ({
   const handleCaptureTimeChange = (resObj: MenuOptionType): void => {
     setSelectedTimeduration(resObj)
   }
-  const handleSelectedLanguageChange = (resObj: MenuOptionType): void => {
-    setSelectedLanguage(resObj)
-  }
+
   const handleStartRecording = async (): Promise<void> => {
     try {
+      const azureAPIKEY = localStorage.getItem('azureAPIKey')
+      const azureAPIRegion = localStorage.getItem('azureAPIRegion')
+
       const processDevice = localStorage.getItem('process_device')
       setTranscriptionIsLoading(true)
       setTranscriptionSentence('')
       setTranslationSentence('')
       setTranslationError(null)
+      setTranscriptionError(null)
       setIsCapturingAudio(true)
       const response = await window.api.startStreaming(
         selectedAudioDevice.value as 'mic' | 'speaker',
@@ -137,8 +124,10 @@ const TranslatorController = ({
         selectedModel && selectedModel.model
           ? (selectedModel.model as WhisperModelListType)
           : 'tiny',
-        selectedLanguage.value as AudioLanguageType,
-        selectedAzureLanguage.value.toString()
+        selectedTranscriptionLanguage.value as AudioLanguageType,
+        selectedTranslationLanguage.value.toString(),
+        azureAPIKEY ? azureAPIKEY : '',
+        azureAPIRegion ? azureAPIRegion : ''
       )
       if (response.success) {
         if (response.data.status !== undefined && response.data.status === 1) {
@@ -249,13 +238,13 @@ const TranslatorController = ({
             position="initial"
             disableButton={selectedModel === null ? true : isCapturingAudio}
             optionsData={languages}
-            currentOption={selectedLanguage}
-            handleOptionChange={handleSelectedLanguageChange}
+            currentOption={selectedTranscriptionLanguage}
+            handleOptionChange={handleSelectedTranscriptionLanguageChange}
             enableArrow={true}
             customButtonClassName={
               'bg-primary-button hover:bg-primary-button-hover flex flex-row text-start items-center justify-between w-fit h-fit py-2 px-3 rounded-full text-lg font-bold text-white gap-3 uppercase'
             }
-            customButtonContent={selectedLanguage.value.toString()}
+            customButtonContent={selectedTranscriptionLanguage.value.toString()}
             customButtonTitle={`Select Language`}
           />
         </div>
