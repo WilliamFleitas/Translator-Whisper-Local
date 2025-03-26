@@ -1,0 +1,16 @@
+
+
+
+
+.draggable-obj {
+    -webkit-app-region: drag;
+}
+
+.draggable-obj:hover {
+    background-color: red;
+}
+
+.custom-textarea::placeholder {
+    color: inherit;
+    opacity: 1;
+  }

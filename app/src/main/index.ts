@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Tray, Menu } from 'electron'
+import { app, BrowserWindow, ipcMain, Tray, Menu, screen } from 'electron'
 import path, { join } from 'path'
 import dotenv from 'dotenv'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -24,7 +24,7 @@ dotenv.config()
 
 let tray: Tray | null = null
 let mainWindow: BrowserWindow | null = null
-let overlayWindow: BrowserWindow | null = null
+let translationOverlayWindow: BrowserWindow | null = null
 const isPackaged = app.isPackaged
 
 const getScriptPath = (packagePath: string[], devPath: string): any => {
@@ -108,14 +108,18 @@ function createTray(): void {
   })
 }
 
-function createOverlay(): void {
-  if (!overlayWindow) {
-    overlayWindow = new BrowserWindow({
-      width: 400,
-      height: 150,
-      x: 100,
+function createTranslationOverlay(): void {
+  if (!translationOverlayWindow) {
+    const { width } = screen.getPrimaryDisplay().workAreaSize
+    translationOverlayWindow = new BrowserWindow({
+      height: 230,
+      width: 600,
+      minWidth: 430,
+      minHeight: 136,
+      x: width - 600,
       y: 100,
       transparent: true,
+      resizable: true,
       frame: false,
       alwaysOnTop: true,
       skipTaskbar: true,
@@ -125,34 +129,47 @@ function createOverlay(): void {
         preload: join(__dirname, '../preload/index.js')
       }
     })
-
-    overlayWindow.loadURL(
-      'data:text/html;charset=utf-8,' +
-        encodeURIComponent(`
-          <html>
-            <body style="margin: 0; padding: 0; background: transparent; 
-                        color: white; font-size: 36px; font-weight: bold; 
-                        text-align: center; border: 5px solid yellow; 
-                        border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);">
-              Texto del Overlay
-            </body>
-          </html>
-        `)
-    )
+    translationOverlayWindow.setAlwaysOnTop(true, 'screen-saver')
+    translationOverlayWindow.setVisibleOnAllWorkspaces(true, {
+      visibleOnFullScreen: true
+    })
+    if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+      translationOverlayWindow.loadURL(
+        `${process.env['ELECTRON_RENDERER_URL']}#/translationOverlay`
+      )
+    } else {
+      translationOverlayWindow.loadFile(join(__dirname, '../renderer/index.html'), {
+        hash: 'translationOverlay'
+      })
+    }
   }
 }
 
-ipcMain.on('toggle-overlay', (_event, shouldShow: boolean) => {
-  if (shouldShow) {
-    if (!overlayWindow) {
-      createOverlay()
+ipcMain.handle('clickable-overlay', async (_event, enableOverlay: boolean) => {
+  if (translationOverlayWindow) {
+    if (enableOverlay) {
+      translationOverlayWindow.setIgnoreMouseEvents(false)
+    } else {
+      translationOverlayWindow.setIgnoreMouseEvents(true, { forward: true })
     }
-    overlayWindow?.show()
-  } else {
-    if (overlayWindow) {
-      overlayWindow.close()
-      overlayWindow = null
+  }
+})
+
+ipcMain.on('toggle-overlay', (_event, enableOverlay: boolean) => {
+  try {
+    if (enableOverlay) {
+      if (!translationOverlayWindow) {
+        createTranslationOverlay()
+      }
+      translationOverlayWindow?.show()
+    } else {
+      if (translationOverlayWindow) {
+        translationOverlayWindow.close()
+        translationOverlayWindow = null
+      }
     }
+  } catch (error: any) {
+    console.error('Error toggling overlay:', error)
   }
 })
 
@@ -399,13 +416,16 @@ let startStreamingProcess: ChildProcess | null = null
 
 ipcMain.handle(
   'start-streaming',
-  async (
+  (
     event,
     device: DeviceType,
     durationTime: DurationTimeType,
     processDevice: ProcessDevicesType,
     modelName: WhisperModelListType,
-    audio_language: AudioLanguageType
+    audio_language: AudioLanguageType,
+    translation_language: string,
+    subsKey: string | undefined,
+    region: string | undefined
   ) => {
     return new Promise((resolve) => {
       const scriptPath = getScriptPath(['speechToTextPy.py'], 'speechToTextPy.py')
@@ -439,16 +459,31 @@ ipcMain.handle(
             const response = JSON.parse(receivedData)
             if (response.success) {
               if (response.data.status !== undefined) {
-                if (response.data.status === 0) {
+                if (response.data.status === 0 || response.data.status === 2) {
                   event.sender.send('streaming-data', response)
-                  if (response.data.transcription.length && !translationError) {
+                  if (translationOverlayWindow) {
+                    translationOverlayWindow.webContents.send('streaming-data', response)
+                  }
+                  if (
+                    response.data.transcription !== undefined &&
+                    response.data.transcription.length &&
+                    !translationError
+                  ) {
                     try {
                       const translatedText = await textTranslator(
                         response.data.transcription,
                         audio_language,
-                        'es'
+                        translation_language,
+                        subsKey,
+                        region
                       )
                       event.sender.send('translation-data', translatedText)
+                      if (translationOverlayWindow) {
+                        translationOverlayWindow.webContents.send(
+                          'translation-data',
+                          translatedText
+                        )
+                      }
                     } catch (error: any) {
                       translationError = true
                       event.sender.send('translation-error-data', error.message, translationError)
@@ -652,7 +687,30 @@ ipcMain.handle(
     })
   }
 )
-
+ipcMain.handle(
+  'get-translation',
+  async (
+    _event,
+    transcription: string,
+    audio_language: AudioLanguageType,
+    translation_language: string,
+    subsKey: string | undefined,
+    region: string | undefined
+  ) => {
+    try {
+      const translatedText = await textTranslator(
+        transcription,
+        audio_language,
+        translation_language,
+        subsKey,
+        region
+      )
+      return { success: true, data: { translation: translatedText } }
+    } catch (error: any) {
+      return { success: false, error: error.message }
+    }
+  }
+)
 app.whenReady().then(() => {
   electronApp.setAppUserModelId('com.electron')
 

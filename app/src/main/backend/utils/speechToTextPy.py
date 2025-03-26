@@ -81,7 +81,8 @@ def recognize_stream(source_type="mic", durationTime="60", process_device="cpu",
         model_path = os.path.join(os.path.expanduser("~"), "AppData", "Local", "whisperModels")
         whisper.torch.load = functools.partial(whisper.torch.load, weights_only=True)
         model = whisper.load_model(model_name, download_root=model_path, device=process_device)
-
+        sys.stdout.write(json.dumps({"success": True, "data": {"status": 2, "message": "Model loaded successfully."}}, ensure_ascii=False) + "\n")
+        sys.stdout.flush()
         audio = pyaudio.PyAudio()
         stream = None
         # output_filename = "output.wav"
