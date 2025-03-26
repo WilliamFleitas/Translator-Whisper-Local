@@ -6,21 +6,38 @@ import { MdCircle } from 'react-icons/md'
 import { toast } from 'react-toastify'
 import DefaultLoading from '@renderer/components/loading/DefaultLoading'
 import CustomAccordion from '@renderer/components/accordion/CustomAccordion'
-
-interface WhisperModelsPropsType {
+import PasswordInput from '@renderer/components/customInput/PasswordInput'
+import { FaRegEdit } from 'react-icons/fa'
+interface AppSettingsPropsType {
   selectedModel: AvailableModelsType | null
   setSelectedModel: React.Dispatch<React.SetStateAction<AvailableModelsType | null>>
 }
-const WhisperModels = ({
+const AppSettings = ({
   selectedModel,
   setSelectedModel
-}: WhisperModelsPropsType): React.ReactElement => {
+}: AppSettingsPropsType): React.ReactElement => {
   const [availableModels, setAvailableModels] = useState<AvailableModelsType[] | null>(null)
   const [availableModelsError, setAvailableModelsError] = useState<string>('')
 
   const [availableModelsIsLoading, setAvailableModelsIsLoading] = useState<boolean>(false)
   const [currentDownloadModel, setCurrentDownloadModel] = useState<AvailableModelsType[]>([])
 
+  const [azureAPIkeyValue, setAzureAPIKeyValue] = useState<string>('')
+  const [azureAPIRegionValue, setAzureAPIRegionValue] = useState<string>('')
+  const [editAzureSettingsIsEnabled, setEditAzureSettingsIsEnabled] = useState<boolean>(false)
+  const handleAzureKeyChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+    const target = event.target as HTMLInputElement
+    setAzureAPIKeyValue(target.value)
+  }
+  const handleAzureRegionChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+    const target = event.target as HTMLInputElement
+    setAzureAPIRegionValue(target.value)
+  }
+  const setAzureSettings = (): void => {
+    localStorage.setItem('azureAPIKey', azureAPIkeyValue)
+    localStorage.setItem('azureAPIRegion', azureAPIRegionValue)
+    setEditAzureSettingsIsEnabled(false)
+  }
   const handleSelectedModelChange = (model: AvailableModelsType): void => {
     setSelectedModel(model)
   }
@@ -94,10 +111,57 @@ const WhisperModels = ({
   }
   useEffect(() => {
     handleGetAvailableModels()
+    const azureAPIKEY = localStorage.getItem('azureAPIKey')
+    const azureAPIRegion = localStorage.getItem('azureAPIRegion')
+    if (azureAPIKEY?.length && azureAPIRegion?.length) {
+      setAzureAPIKeyValue(azureAPIKEY)
+      setAzureAPIRegionValue(azureAPIRegion)
+    } else {
+      setAzureAPIKeyValue('')
+      setAzureAPIRegionValue('')
+    }
   }, [])
   return (
     <div className="flex flex-col text-start items-start justify-start w-full h-fit bg-secondary-background py-4 px-4 md:px-8 gap-4">
-      <strong className='text-3xl'>Whisper Models Availables</strong>
+      <CustomAccordion
+        accordionTitle={<strong className="text-3xl">Azure API Settings.</strong>}
+        accordionContent={
+          <div className="flex flex-row w-full h-fit text-start items-center justify-between gap-4">
+            <PasswordInput
+              inputValue={azureAPIkeyValue}
+              placeholder="Azure API key here"
+              disabled={!editAzureSettingsIsEnabled}
+              inputOnChange={handleAzureKeyChange}
+            />
+            <PasswordInput
+              inputValue={azureAPIRegionValue}
+              placeholder="Azure Region here"
+              disabled={!editAzureSettingsIsEnabled}
+              inputOnChange={handleAzureRegionChange}
+            />
+            {editAzureSettingsIsEnabled ? (
+              <button
+                type="button"
+                className="bg-primary-button hover:bg-primary-button-hover py-2 rounded-md px-4 h-full cursor-pointer"
+                onClick={setAzureSettings}
+              >
+                <FaCheck className="w-5 h-5 text-success" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="bg-primary-button hover:bg-primary-button-hover py-2 rounded-md px-4 h-full cursor-pointer"
+                onClick={() => {
+                  setEditAzureSettingsIsEnabled(true)
+                }}
+              >
+                <FaRegEdit className="w-5 h-5 text-success" />
+              </button>
+            )}
+          </div>
+        }
+      />
+      <strong className="text-3xl">Whisper Models Availables</strong>
 
       {availableModelsIsLoading ? (
         <div className="flex flex-row w-full h-fit text-center items-center justify-center p-10 gap-3">
@@ -115,7 +179,11 @@ const WhisperModels = ({
         <>
           <div className="flex flex-col w-full h-fit text-start items-start justify-start gap-4">
             <CustomAccordion
-              accordionTitle={<strong className='text-xl'>Installed models, Choose the one you want to use.</strong>}
+              accordionTitle={
+                <strong className="text-xl">
+                  Installed models, Choose the one you want to use.
+                </strong>
+              }
               accordionContent={
                 <div className="flex flex-row flex-wrap w-full h-fit text-start items-center justify-between gap-4">
                   {availableModels !== null ? (
@@ -150,7 +218,7 @@ const WhisperModels = ({
           </div>
           <div className="flex flex-col w-full h-fit text-start items-start justify-start gap-4">
             <CustomAccordion
-              accordionTitle={<strong className='text-xl'>Models Available to download.</strong>}
+              accordionTitle={<strong className="text-xl">Models Available to download.</strong>}
               accordionContent={
                 <div className="flex flex-row flex-wrap w-full h-fit text-start items-center justify-between gap-4">
                   {availableModels !== null ? (
@@ -201,4 +269,4 @@ const WhisperModels = ({
   )
 }
 
-export default WhisperModels
+export default AppSettings

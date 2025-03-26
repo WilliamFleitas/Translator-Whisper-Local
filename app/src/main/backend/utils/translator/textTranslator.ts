@@ -2,12 +2,15 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
-const subscriptionKey = process.env.AZURE_TRANSLATOR_KEY
-const region = process.env.AZURE_TRANSLATOR_REGION
-
-const textTranslator = async (text: string, from: string, to: string): Promise<string> => {
+const textTranslator = async (
+  text: string,
+  from: string,
+  to: string,
+  subsKey: string | undefined,
+  region: string | undefined
+): Promise<string> => {
   const endpoint = 'https://api.cognitive.microsofttranslator.com/translate?api-version=3.0'
-  if (!subscriptionKey || !region) {
+  if (!subsKey || !region) {
     throw Error('Azure API Key or Region are missing')
   }
 
@@ -16,7 +19,7 @@ const textTranslator = async (text: string, from: string, to: string): Promise<s
       method: 'POST',
       body: JSON.stringify([{ text }]),
       headers: {
-        'Ocp-Apim-Subscription-Key': subscriptionKey,
+        'Ocp-Apim-Subscription-Key': subsKey,
         'Ocp-Apim-Subscription-Region': region,
         'Content-Type': 'application/json'
       }

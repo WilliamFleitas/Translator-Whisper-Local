@@ -1,5 +1,4 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { electronAPI } from '@electron-toolkit/preload'
 
 interface AudioDeviceDataType {
   name: string
@@ -28,7 +27,7 @@ interface SetVCSetupType {
 }
 
 export interface StartStreamingType {
-  status: number
+  status: 0 | 1 | 2
   transcription?: string
   message?: string
 }
@@ -112,7 +111,10 @@ export interface Api {
     durationTime: DurationTimeType,
     processDevice: ProcessDevicesType,
     modelName: WhisperModelListType,
-    audio_language: AudioLanguageType
+    audio_language: AudioLanguageType,
+    translation_language: string,
+    subsKey: string | undefined,
+    region: string | undefined
   ) => Promise<ApiResponse<StartStreamingType>>
   stopStreaming: () => Promise<ApiResponse<{ status: string }>>
   getAudioDevices: () => Promise<ApiResponse<AudioDeviceDataType[]>>
@@ -122,6 +124,16 @@ export interface Api {
   ) => Promise<ApiResponse<CheckVoicemeeterIsRunningType>>
   getVCSettingsStatus: () => Promise<ApiResponse<VCSettingsStatusType>>
   setVCSetup: (device_name: string) => Promise<ApiResponse<SetVCSetupType>>
+  getTranslation: (
+    transcription: string,
+    audio_language: AudioLanguageType,
+    translation_language: string,
+    subsKey: string | undefined,
+    region: string | undefined
+  ) => Promise<ApiResponse<{ translation: string }>>
+  setClickableOverlay: (enableOverlay: boolean) => void
+
+  handleTranslationOverlay: (enableOverlay: boolean) => void
 
   on: (event: string, listener: (event: Electron.IpcRendererEvent, data: any) => void) => void
   removeListener: (
@@ -142,14 +154,26 @@ const api: Api = {
   whisperHelpers: async (helperName, model_name) => {
     return await ipcRenderer.invoke('whisper-helpers', helperName, model_name)
   },
-  startStreaming: async (device, durationTime, processDevice, model_name, audio_language) => {
+  startStreaming: async (
+    device,
+    durationTime,
+    processDevice,
+    model_name,
+    audio_language,
+    translation_language,
+    subsKey,
+    region
+  ) => {
     return await ipcRenderer.invoke(
       'start-streaming',
       device,
       durationTime,
       processDevice,
       model_name,
-      audio_language
+      audio_language,
+      translation_language,
+      subsKey,
+      region
     )
   },
   stopStreaming: async () => {
@@ -170,7 +194,23 @@ const api: Api = {
   setVCSetup: async (device_name) => {
     return await ipcRenderer.invoke('set_VC_setup', device_name)
   },
+  getTranslation: async (transcription, audio_language, translation_language, subsKey, region) => {
+    return await ipcRenderer.invoke(
+      'get-translation',
+      transcription,
+      audio_language,
+      translation_language,
+      subsKey,
+      region
+    )
+  },
+  setClickableOverlay: (enableOverlay: boolean) => {
+    ipcRenderer.invoke('clickable-overlay', enableOverlay)
+  },
 
+  handleTranslationOverlay: (enableOverlay) => {
+    ipcRenderer.send('toggle-overlay', enableOverlay)
+  },
   on: (event, listener) => {
     ipcRenderer.on(event, listener)
   },
@@ -189,14 +229,14 @@ const api: Api = {
 // just add to the DOM global.
 if (process.contextIsolated) {
   try {
-    contextBridge.exposeInMainWorld('electron', electronAPI)
+    // contextBridge.exposeInMainWorld('electron', electronAPI)
     contextBridge.exposeInMainWorld('api', api)
   } catch (error) {
     console.error(error)
   }
 } else {
   // @ts-ignore (define in dts)
-  window.electron = electronAPI
+  // window.electron = electronAPI
   // @ts-ignore (define in dts)
   window.api = api
 }
