@@ -1,5 +1,5 @@
 import { AvailableModelsType, WhisperModelListType } from '@renderer/globalTypes/globalApi'
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import { IoMdDownload } from 'react-icons/io'
 import { FaCheck } from 'react-icons/fa'
 import { MdCircle } from 'react-icons/md'
@@ -8,6 +8,8 @@ import DefaultLoading from '@renderer/components/loading/DefaultLoading'
 import CustomAccordion from '@renderer/components/accordion/CustomAccordion'
 import PasswordInput from '@renderer/components/customInput/PasswordInput'
 import { FaRegEdit } from 'react-icons/fa'
+import { SettingsStatusContext } from '@renderer/components/context/AzureSettingsContext'
+
 interface AppSettingsPropsType {
   selectedModel: AvailableModelsType | null
   setSelectedModel: React.Dispatch<React.SetStateAction<AvailableModelsType | null>>
@@ -25,6 +27,9 @@ const AppSettings = ({
   const [azureAPIkeyValue, setAzureAPIKeyValue] = useState<string>('')
   const [azureAPIRegionValue, setAzureAPIRegionValue] = useState<string>('')
   const [editAzureSettingsIsEnabled, setEditAzureSettingsIsEnabled] = useState<boolean>(false)
+
+  const { updateAzureSettingsState } = useContext(SettingsStatusContext)
+
   const handleAzureKeyChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
     const target = event.target as HTMLInputElement
     setAzureAPIKeyValue(target.value)
@@ -36,6 +41,7 @@ const AppSettings = ({
   const setAzureSettings = (): void => {
     localStorage.setItem('azureAPIKey', azureAPIkeyValue)
     localStorage.setItem('azureAPIRegion', azureAPIRegionValue)
+    updateAzureSettingsState(azureAPIkeyValue, azureAPIRegionValue)
     setEditAzureSettingsIsEnabled(false)
   }
   const handleSelectedModelChange = (model: AvailableModelsType): void => {
@@ -116,13 +122,15 @@ const AppSettings = ({
     if (azureAPIKEY?.length && azureAPIRegion?.length) {
       setAzureAPIKeyValue(azureAPIKEY)
       setAzureAPIRegionValue(azureAPIRegion)
+      updateAzureSettingsState(azureAPIKEY, azureAPIRegion)
     } else {
       setAzureAPIKeyValue('')
       setAzureAPIRegionValue('')
+      updateAzureSettingsState('', '')
     }
   }, [])
   return (
-    <div className="flex flex-col text-start items-start justify-start w-full h-fit bg-secondary-background py-4 px-4 md:px-8 gap-4">
+    <div className="flex flex-col text-start items-start justify-start w-full h-fit bg-secondary-background py-6 px-4 md:px-8 gap-4">
       <CustomAccordion
         accordionTitle={<strong className="text-3xl">Azure API Settings.</strong>}
         accordionContent={

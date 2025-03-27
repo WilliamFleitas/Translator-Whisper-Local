@@ -4,7 +4,7 @@ import TranslatorSettings from '../translatorSettings/TranslatorSettings'
 import useTranscriptionListener from '@renderer/assets/customHooks/useTranscriptionListener'
 import useTranslationListener from '@renderer/assets/customHooks/useTranslationListener'
 import { useState } from 'react'
-import AppSettings from './assets/AppSetings'
+import AppSettings from './assets/AppSettings'
 
 const PCAudioTranslator: React.FC = () => {
   const [isCapturingAudio, setIsCapturingAudio] = useState<boolean>(false)
