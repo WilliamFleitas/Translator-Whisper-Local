@@ -1,7 +1,8 @@
 import { AudioLanguageType, AvailableModelsType } from '@renderer/globalTypes/globalApi'
-import { useEffect, useRef, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 import TranslatorController from './TranslatorController'
 import SelectMenu, { MenuOptionType } from '@renderer/components/menu/SelectMenu'
+import { SettingsStatusContext } from '@renderer/components/context/AzureSettingsContext'
 
 export const languages = [
   { id: 1, value: 'en', label: 'English' },
@@ -82,12 +83,16 @@ const TranslatorTextarea = ({
   setTranslationError,
   setTranscriptionError
 }: TranslatorTextareaPropsType): React.ReactElement => {
+  const {
+    azureSettingsState: { APIKey, APIRegion }
+  } = useContext(SettingsStatusContext)
+
   const [text1, setText1] = useState('')
   const [text2, setText2] = useState('')
   const [azureLanguages, setAzureLanguages] = useState<MenuOptionType[]>([])
   const [selectedTranslationLanguage, setSelectedTranslationLanguage] = useState<MenuOptionType>({
-    label: 'English',
-    value: 'en',
+    label: 'Español',
+    value: 'es',
     id: 0
   })
   const [overlayIsShowing, SetOverlayIsShowing] = useState<boolean>(false)
@@ -99,15 +104,13 @@ const TranslatorTextarea = ({
   const debounceTimer = useRef<NodeJS.Timeout | null>(null)
 
   const fetchTranslation = async (text: string): Promise<void> => {
-    const azureAPIKEY = localStorage.getItem('azureAPIKey')
-    const azureAPIRegion = localStorage.getItem('azureAPIRegion')
-    if (azureAPIKEY && azureAPIRegion) {
+    if (APIKey.length > 0 && APIRegion.length > 0) {
       const response = await window.api.getTranslation(
         text,
         selectedTranscriptionLanguage.value.toString() as AudioLanguageType,
         selectedTranslationLanguage.value.toString(),
-        azureAPIKEY,
-        azureAPIRegion
+        APIKey,
+        APIRegion
       )
       if (response.success) {
         setTranslationSentence(response.data.translation)
@@ -263,18 +266,21 @@ const TranslatorTextarea = ({
             placeholder="Transcription.."
             disabled={true}
           />
-          {translationError?.length ? (
+          {APIKey.length <= 0 || APIRegion.length <= 0 || translationError?.length ? (
             <strong className="bg-secondary-background/80 absolute top-0 left-0 w-full h-full flex text-center items-center justify-center grow gap-2 text-3xl border border-danger rounded-t-md">
-              <span className="text-danger text-3xl">Error: </span> {translationError}
+              <span className="text-danger text-3xl">Error: </span>{' '}
+              {APIKey.length <= 0 || APIRegion.length <= 0
+                ? 'Missing Azure Key or Region'
+                : translationError}
             </strong>
           ) : (
             <></>
           )}
         </div>
         <div className="mt-auto">
-          <nav className="py-3 px-4 gap-8 flex flex-col sm:flex-row w-full justify-between items-stretch text-start relative bg-secondary-background">
-            <section className="flex flex-row w-full md:w-fit h-fit text-start items-center justify-between md:justify-start  gap-4 text-lg ">
-              <div className="flex flex-row flex-grow lg:flex-grow-0 text-start items-center justify-between gap-4 whitespace-nowrap">
+          <nav className="py-3 px-4 gap-8 flex flex-col sm:flex-row w-full justify-between items-stretch text-start relative bg-secondary-background ">
+            <section className="flex flex-row w-full md:w-fit h-fit text-start items-center justify-between md:justify-start  gap-4 text-lg">
+              <div className="flex flex-row  text-start items-center justify-between gap-4 whitespace-nowrap">
                 <SelectMenu
                   viewScroll="initial"
                   placeX="left"
@@ -283,19 +289,23 @@ const TranslatorTextarea = ({
                   shift={0}
                   portal={true}
                   position="initial"
-                  disableButton={selectedModel === null ? true : isCapturingAudio}
+                  disableButton={
+                    APIKey.length <= 0 || APIRegion.length <= 0 ? true : isCapturingAudio
+                  }
                   optionsData={azureLanguages}
                   currentOption={selectedTranslationLanguage}
                   handleOptionChange={handleSelectedTranslationLanguageChange}
                   enableArrow={true}
-                  customButtonClassName={
-                    'bg-primary-button hover:bg-primary-button-hover flex flex-row text-start items-center justify-between w-fit h-fit py-2 px-3 rounded-full text-lg font-bold text-white gap-3 uppercase'
-                  }
+                  customButtonClassName={` flex flex-row text-start items-center justify-between w-fit h-fit py-2 px-3 rounded-full text-lg font-bold text-white gap-3 uppercase ${APIKey.length <= 0 || APIRegion.length <= 0 ? 'bg-primary-button-hover' : 'bg-primary-button hover:bg-primary-button-hover'}`}
                   customButtonContent={selectedTranslationLanguage.value.toString()}
-                  customButtonTitle={`Select Translation Language`}
+                  customButtonTitle={
+                    APIKey.length <= 0 || APIRegion.length <= 0
+                      ? 'Missing Azure Key or Region'
+                      : `Select Translation Language`
+                  }
                 />
               </div>
-              <div className="flex flex-row flex-grow lg:flex-grow-0 text-start items-center justify-between gap-4 whitespace-nowrap">
+              <div className="flex flex-row  text-start items-center justify-between gap-4 whitespace-nowrap">
                 <label className="cursor-pointer bg-primary-button hover:bg-primary-button-hover flex flex-row text-start items-center justify-between w-fit h-fit py-2 px-3 rounded-full text-lg font-bold text-white gap-3 uppercase">
                   <span>Overlay</span>
                   <input
@@ -306,27 +316,6 @@ const TranslatorTextarea = ({
                   />
                   <div className="relative w-10 h-5 bg-gray-200 rounded-full peer peer-focus:ring-0 dark:bg-secondary-background peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.4 after:start-[0.5px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600 border-none outline-none ring-0 hover:border-none hover:outline-none hover:ring-0 focus:border-none focus:outline-none focus:ring-0 active:border-none active:outline-none active:ring-0 "></div>
                 </label>
-              </div>
-              <div className="flex flex-row flex-grow lg:flex-grow-0 text-start items-center justify-between gap-4 whitespace-nowrap">
-                <SelectMenu
-                  viewScroll="initial"
-                  placeX="left"
-                  placeY="bottom"
-                  gap={1}
-                  shift={0}
-                  portal={true}
-                  position="initial"
-                  disableButton={selectedModel === null ? true : isCapturingAudio}
-                  optionsData={azureLanguages}
-                  currentOption={selectedTranslationLanguage}
-                  handleOptionChange={handleSelectedTranslationLanguageChange}
-                  enableArrow={true}
-                  customButtonClassName={
-                    'bg-primary-button hover:bg-primary-button-hover flex flex-row text-start items-center justify-between w-fit h-fit py-2 px-3 rounded-full text-lg font-bold text-white gap-3 uppercase'
-                  }
-                  customButtonContent={selectedTranslationLanguage.value.toString()}
-                  customButtonTitle={`Select Translation Language`}
-                />
               </div>
             </section>
           </nav>

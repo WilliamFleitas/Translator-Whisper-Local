@@ -1,6 +1,6 @@
-# **FreeLang**
+# **Translator**
 
-FreeLang is a desktop application built with Electron, featuring a React frontend, a Node.js backend, and Python scripts for audio transcription. The app utilizes OpenAI Whisper for transcribing audio into text and Voicemeeter Banana to enable capturing system output audio as a virtual microphone.
+Translator is a desktop application built with Electron, featuring a React frontend, a Node.js backend, and Python scripts for audio transcription. The app utilizes OpenAI Whisper for transcribing audio into text and Voicemeeter Banana to enable capturing system output audio as a virtual microphone.
 
 🚨 Note: This application is only compatible with Windows.
 

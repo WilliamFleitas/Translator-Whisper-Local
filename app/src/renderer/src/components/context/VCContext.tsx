@@ -20,11 +20,7 @@ const defaultState: VCStatusContextType = {
 const VCStatusContext = createContext<VCStatusContextType>(defaultState)
 
 const VCContext: React.FC<VCProviderProps> = ({ children }) => {
-  const [state, setState] = useState<DefaultStateType>({
-    is_running: false,
-    default_audio_device: false,
-    lock_status: false
-  })
+  const [state, setState] = useState<DefaultStateType>(defaultState.state)
 
   const handleUpdateState = (key: string, value: boolean): void => {
     setState((prevState) => ({ ...prevState, [key]: value }))

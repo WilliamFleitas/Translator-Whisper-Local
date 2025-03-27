@@ -2,6 +2,7 @@ import { Routes, Route, HashRouter, useLocation } from 'react-router-dom'
 import TranslatorPage from './pages/translator/TranslatorPage'
 import CheckDependencies from './pages/checkDependencies/CheckDependencies'
 import { VCContext } from './components/context/VCContext'
+import { AzureSettingsContext } from './components/context/AzureSettingsContext'
 import TranslationOverlay from './pages/translationOverlay/TranslationOverlay'
 import { useEffect } from 'react'
 
@@ -26,7 +27,9 @@ const MainRoutes: React.FC = () => {
         path="translator"
         element={
           <VCContext>
-            <TranslatorPage />
+            <AzureSettingsContext>
+              <TranslatorPage />
+            </AzureSettingsContext>
           </VCContext>
         }
       />
