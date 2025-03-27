@@ -1,17 +1,17 @@
 # **Translator**
 
-Translator is a desktop app built with Electron.js, React on the frontend, and Node.js on the backend. The application uses OpenAI Whisper for audio-to-text transcription, Voicemeeter Banana for capturing system audio, and Azure AI Translator for language translation.
+Translator is a desktop application built with **Electron.js**, featuring **React** on the frontend and **Node.js** on the backend. It leverages **OpenAI Whisper** for audio-to-text transcription, **Voicemeeter Banana** for system audio capture, and **Azure AI Translator** for language translation.
 
-🚨 Note: This application is only compatible with Windows.
+🚨 **Note:** This application is only compatible with **Windows**. 
 
 ## **Features**
- - 🎤 Audio Capture: Capture audio from either a microphone or the system's audio output.
- - 🎤 Audio Transcription: Convert captured audio to text using OpenAI Whisper.
- - 🎤 Audio Translation: Uses Azure AI Translator for language translation. [Get your Key for Azure here](https://azure.microsoft.com/en-us/products/ai-services/ai-translator)
- - 🔊 Simulated Real-Time Transcription: Although Whisper is not designed for real-time transcription, the app simulates this behavior by continuously processing audio streams.
- - 🎧 Voicemeeter Banana Integration: Redirects system audio to a virtual microphone, allowing the captured audio to be used for transcription.
- - ⚡ Electron-Based UI: A modern interface powered by React and Electron.
- - 🐍 Python Backend: Uses Python scripts executed via Node.js for handling audio processing.
+- 🎤 **Audio Capture**: Capture audio from either a microphone or the system's audio output.  
+- 📝 **Audio Transcription**: Convert captured audio to text using OpenAI Whisper.  
+- 🌍 **Audio Translation**: Uses Azure AI Translator for language translation. [Get your Azure AI Translator key here](https://azure.microsoft.com/en-us/products/ai-services/ai-translator).  
+- ⏳ **Simulated Real-Time Transcription**: While Whisper is not designed for real-time transcription, the app simulates this behavior by continuously processing audio streams.  
+- 🎧 **Voicemeeter Banana Integration**: Redirects system audio to a virtual microphone, allowing captured audio to be used for transcription.  
+- ⚡ **Electron-Based UI**: A modern and responsive interface powered by React and Electron.  
+- 🐍 **Python Backend**: Uses Python scripts executed via Node.js to handle audio processing. 
 
 ## **Requirements**
 1. Install Dependencies.
