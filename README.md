@@ -1,6 +1,6 @@
 # **Translator**
 
-Translator is a desktop application built with **Electron.js**, featuring **React** on the frontend and **Node.js** on the backend. It leverages **OpenAI Whisper** for audio-to-text transcription, **Voicemeeter Banana** for system audio capture, and **Azure AI Translator** for language translation.
+Translator is a desktop application built with **Electron.js**, featuring **React** on the frontend and **Node.js** on the backend. It leverages **OpenAI Whisper** for audio-to-text transcription(Running Locally), **Voicemeeter Banana** for system audio capture, and **Azure AI Translator** for language translation.
 
 🚨 **Note:** This application is only compatible with **Windows**. 
 
