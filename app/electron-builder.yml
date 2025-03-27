@@ -1,5 +1,5 @@
-appId: com.freeLangElectron.app
-productName: FreeLangAPP
+appId: com.translatorElectron.app
+productName: TranslatorAPP
 directories:
   buildResources: build
 files:
@@ -14,7 +14,7 @@ files:
 asarUnpack:
   - resources/**
 win:
-  executableName: FreeLangExecutable
+  executableName: TranslatorExecutable
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}

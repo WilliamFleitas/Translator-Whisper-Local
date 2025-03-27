@@ -55,7 +55,8 @@ function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 900,
     minWidth: 450,
-    height: 670,
+    minHeight: 700,
+    height: 700,
     show: false,
     autoHideMenuBar: true,
     frame: false,
@@ -86,7 +87,7 @@ function createTray(): void {
   const trayIcon =
     process.platform === 'darwin' ? icon : join(__dirname, '../../resources/icon.png')
   tray = new Tray(trayIcon)
-  tray.setToolTip('FreeLang')
+  tray.setToolTip('Translator')
   const trayMenu = Menu.buildFromTemplate([
     {
       label: 'Open App',
