@@ -21,10 +21,18 @@
     "build:linux": "electron-vite build && electron-builder --linux"
   },
   "build": {
-    "productName": "Translator",
+    "appId": "com.translatorElectron.app",
+    "productName": "TranslatorAPP",
+    "compression": "store",
     "win": {
       "target": "nsis"
     },
+    "files": [
+      "out/**/*",
+      "package.json",
+      "!**/node_modules/{test,docs,examples}/**",
+      "!**/*.map"
+    ],
     "extraResources": [
       {
         "from": "venv",
