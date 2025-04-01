@@ -6,8 +6,8 @@
     margin: 0px 0px 10px 0px;
     min-width: 25rem;
     min-height: fit-content;
-    background-color: #002634;
-    border: 1px solid #011f2b;
+    background-color: var(--color-primary-button);
+    border: 1px solid var(--color-primary-background);
     overflow: hidden;
     border-radius: 6px;
     isolation: isolate;

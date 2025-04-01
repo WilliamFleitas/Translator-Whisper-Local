@@ -2,7 +2,6 @@ import { app, BrowserWindow, ipcMain, Tray, Menu, screen } from 'electron'
 import path, { join } from 'path'
 import dotenv from 'dotenv'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import icon from '../../resources/icon.png?asset'
 import { spawn, ChildProcess, exec } from 'child_process'
 import fs from 'fs'
 import {
@@ -51,6 +50,40 @@ const venvPython = isPackaged
     )
   : path.resolve(__dirname, '../../venv/Scripts/python')
 
+function createTray(): void {
+  const trayIcon = app.isPackaged
+    ? join(process.resourcesPath, 'icon.png')
+    : join(__dirname, '../../resources/icon.png')
+  tray = new Tray(trayIcon)
+  tray.setToolTip('Translator')
+  const trayMenu = Menu.buildFromTemplate([
+    {
+      label: 'Open App',
+      click: (): void => {
+        mainWindow?.show()
+      }
+    },
+    {
+      label: 'Quit',
+      click: (): void => {
+        if (mainWindow) {
+          mainWindow.destroy()
+          mainWindow = null
+        }
+        if (translationOverlayWindow) {
+          translationOverlayWindow.destroy()
+          translationOverlayWindow = null
+        }
+        app.quit()
+      }
+    }
+  ])
+  tray.setContextMenu(trayMenu)
+
+  tray.on('click', () => {
+    mainWindow?.show()
+  })
+}
 function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 900,
@@ -69,6 +102,9 @@ function createWindow(): void {
 
   mainWindow.on('ready-to-show', () => {
     mainWindow?.show()
+    if (!tray) {
+      createTray()
+    }
   })
 
   mainWindow.on('close', (event) => {
@@ -81,32 +117,6 @@ function createWindow(): void {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
-}
-
-function createTray(): void {
-  const trayIcon =
-    process.platform === 'darwin' ? icon : join(__dirname, '../../resources/icon.png')
-  tray = new Tray(trayIcon)
-  tray.setToolTip('Translator')
-  const trayMenu = Menu.buildFromTemplate([
-    {
-      label: 'Open App',
-      click: (): void => {
-        mainWindow?.show()
-      }
-    },
-    {
-      label: 'Quit',
-      click: (): void => {
-        app.quit()
-      }
-    }
-  ])
-  tray.setContextMenu(trayMenu)
-
-  tray.on('click', () => {
-    mainWindow?.show()
-  })
 }
 
 function createTranslationOverlay(): void {
@@ -720,7 +730,6 @@ app.whenReady().then(() => {
   })
 
   createWindow()
-  createTray()
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
@@ -738,8 +747,9 @@ ipcMain.on('window-maximize', () => {
   }
 })
 
-ipcMain.on('window-close', () => {
-  mainWindow?.close()
+ipcMain.on('window-close', (event) => {
+  event.preventDefault()
+  mainWindow?.hide()
 })
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

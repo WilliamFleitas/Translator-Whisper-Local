@@ -14,6 +14,8 @@ files:
 asarUnpack:
   - resources/**
 win:
+  target: nsis
+  icon: build/icon.ico
   executableName: TranslatorExecutable
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
