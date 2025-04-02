@@ -69,7 +69,7 @@ def install_torch(gpu_type):
     install_command = f'"{sys.executable}" -m pip install --force-reinstall -q torch torchaudio'  
 
     if gpu_type == "nvidia":
-        install_command += " --index-url https://download.pytorch.org/whl/cu124"
+        install_command += " --index-url https://download.pytorch.org/whl/cu121"
     elif gpu_type == "amd":
         install_command += " --index-url https://download.pytorch.org/whl/rocm5.4.2"
     else:
