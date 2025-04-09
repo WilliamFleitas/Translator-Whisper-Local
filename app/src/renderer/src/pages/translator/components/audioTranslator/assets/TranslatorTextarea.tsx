@@ -263,7 +263,7 @@ const TranslatorTextarea = ({
             refValue={textarea2Ref}
             content={text2}
             handleChange={handleTextarea2Change}
-            placeholder="Transcription.."
+            placeholder="Translation.."
             disabled={true}
           />
           {APIKey.length <= 0 || APIRegion.length <= 0 || translationError?.length ? (
