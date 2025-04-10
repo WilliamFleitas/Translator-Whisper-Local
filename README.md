@@ -14,11 +14,11 @@ Translator is a desktop application built with **Electron.js**, featuring **Reac
 - 🐍 **Python Backend**: Uses Python scripts executed via Node.js to handle audio processing. 
 
 ## **Requirements**
-1. Install Dependencies.
+1- Install Dependencies.
     - Node.js (Latest LTS version recommended).
     - Python 3.12 (Ensure it is added to PATH).
     - Voicemeeter Banana (Required for capturing speaker audio). [Download Voicemeeter Banana here](https://vb-audio.com/Voicemeeter/banana.htm)
-2. Setup Python Environment. This project uses a virtual environment to manage Python dependencies. Run the following commands in PowerShell:
+2- Setup Python Environment. This project uses a virtual environment to manage Python dependencies. Run the following commands in PowerShell:
     ```
       cd app
       python -m venv venv
@@ -26,7 +26,7 @@ Translator is a desktop application built with **Electron.js**, featuring **Reac
       pip install -r requirements.txt
     ```
 
-3. Install Node.js Dependencies.<br/>
+3- Install Node.js Dependencies.<br/>
      - Run the following command in the root directory of the project to install dependencies: `npm install`
      - Running the Application. To start the application in development mode: `npm run dev`
      - To rebuild dependencies after installing or modifying native modules: `npm rebuild`
