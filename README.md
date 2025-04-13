@@ -21,14 +21,20 @@ Translator is a desktop application built with **Electron.js**, featuring **Reac
 2- Setup Python Environment. This project uses a virtual environment to manage Python dependencies. Run the following commands in PowerShell:
     ```
       cd app
+
       python -m venv venv
+
       venv\Scripts\activate
+
       pip install -r requirements.txt
     ```
 
 3- Install Node.js Dependencies.<br/>
      - Run the following command in the root directory of the project to install dependencies: `npm install`
+
      - Running the Application. To start the application in development mode: `npm run dev`
+
      - To rebuild dependencies after installing or modifying native modules: `npm rebuild`
+
      - To package the application for distribution: `npm run build`
 
